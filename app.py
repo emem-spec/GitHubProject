@@ -1,54 +1,119 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import numpy as np
+import plotly.express as px
 
-# 1. Titre de l'application
-st.title("Mon Dashboard Finance (Quant B)")
+# --- Configuration de la page ---
+st.set_page_config(page_title="Portfolio Manager", layout="wide")
 
-# 2. Liste des actifs (Hardcodé pour faire simple au début)
-tickers = ['AAPL', 'MSFT', 'GOOGL']
-st.write("Actifs analysés :", tickers)
+st.title("Gestion de Portefeuille Multi-Actifs (Quant B)")
+st.markdown("---")
 
-# 3. Téléchargement des données
-st.write("Téléchargement des données en cours...")
+# --- 1. Sidebar : Paramètres ---
+st.sidebar.header("1. Choix des Actifs")
 
-# CORRECTION ICI : On utilise auto_adjust=True pour avoir des données propres
-# et on ne demande pas ['Adj Close'] explicitement pour éviter le bug.
-try:
-    # Téléchargement des données
-    df = yf.download(tickers, period='1y', auto_adjust=True)
-    
-    # On récupère uniquement la colonne 'Close' (Prix de fermeture)
-    # Cela crée un tableau propre avec les tickers en colonnes
-    data = df['Close']
+# Choix des tickers (Modifiable par l'utilisateur)
+default_tickers = "AAPL, MSFT, GOOGL, AMZN"
+tickers_input = st.sidebar.text_input("Entrez les tickers (séparés par des virgules)", default_tickers)
+tickers = [x.strip().upper() for x in tickers_input.split(',')]
 
-    # Afficher les 5 dernières lignes pour vérifier que ça marche
-    st.subheader("Aperçu des données brutes")
-    st.dataframe(data.tail())
+# Choix de la période
+period = st.sidebar.selectbox("Période d'analyse", ["3mo", "6mo", "1y", "2y", "5y"], index=2)
 
-    # 4. Calculs simples
-    # Calcul des rendements quotidiens (variation en %)
-    returns = data.pct_change()
+st.sidebar.header("2. Allocation du Portefeuille")
+st.sidebar.write("Définissez les poids pour chaque actif :")
 
-    # Création d'un portefeuille "Equipondéré" (1/3 chacun)
-    # On fait la moyenne des rendements des 3 actifs
-    data['Mon Portefeuille'] = returns.mean(axis=1)
+# Création dynamique des sliders pour les poids
+weights = []
+for ticker in tickers:
+    w = st.sidebar.slider(f"Poids pour {ticker}", 0.0, 1.0, 1.0/len(tickers), 0.05)
+    weights.append(w)
 
-    # On recalcule le prix cumulé (base 100) pour le graphique
-    cumulative_returns = (1 + returns).cumprod()
-    cumulative_portfolio = (1 + data['Mon Portefeuille']).cumprod()
+# Normalisation des poids pour que la somme fasse 100% (1.0)
+total_weight = sum(weights)
+if total_weight == 0:
+    norm_weights = [1/len(tickers)] * len(tickers) # Sécurité
+else:
+    norm_weights = [w / total_weight for w in weights]
 
-    # 5. Affichage du Graphique
-    st.subheader("Comparaison : Mes Actions vs Mon Portefeuille")
-    
-    # On affiche tout sur le même graphique
-    # On combine les actions et le portefeuille
-    combined_data = cumulative_returns.copy()
-    combined_data['PORTFOLIO'] = cumulative_portfolio
-    
-    st.line_chart(combined_data)
-    st.write("Le graphique montre l'évolution de 1€ investi il y a un an.")
+# Affichage de la répartition réelle
+st.sidebar.info(f"Poids normalisés : {[round(w, 2) for w in norm_weights]}")
 
-except Exception as e:
-    st.error(f"Une erreur s'est produite : {e}")
-    st.write("Essaie de relancer l'application ou vérifie ta connexion internet.")
+
+# --- 2. Récupération des Données ---
+if len(tickers) < 3:
+    st.error("⚠️ Le sujet exige au moins 3 actifs pour la diversification.")
+else:
+    try:
+        with st.spinner("Téléchargement des données..."):
+            # Récupération des données (auto_adjust=True pour éviter les bugs)
+            df = yf.download(tickers, period=period, auto_adjust=True)
+            
+            # Extraction des prix de clôture (Close)
+            # Attention: Si un seul ticker, la structure est différente, mais ici on impose >=3
+            closes = df['Close']
+            
+            # Gestion des données manquantes
+            closes = closes.dropna()
+
+        # --- 3. Calculs Financiers ---
+        
+        # Rendements quotidiens
+        daily_returns = closes.pct_change().dropna()
+        
+        # Calcul du rendement du portefeuille pondéré
+        # Formule matricielle : R_port = R_assets * Weights
+        portfolio_return = daily_returns.dot(norm_weights)
+        
+        # Indices Base 100 (Pour le graphique)
+        cumulative_returns = (1 + daily_returns).cumprod() * 100
+        cumulative_portfolio = (1 + portfolio_return).cumprod() * 100
+        
+        # On ajoute le portefeuille au tableau pour le graphique
+        chart_data = cumulative_returns.copy()
+        chart_data['PORTFOLIO'] = cumulative_portfolio
+
+        # --- 4. Affichage du Dashboard ---
+
+        # Colonnes pour les KPIs
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📈 Performance Comparée")
+            # Graphique interactif avec Plotly (plus pro que line_chart)
+            fig = px.line(chart_data, title="Évolution Base 100 (Actifs vs Portefeuille)")
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+            st.subheader("🔗 Matrice de Corrélation")
+            st.write("C'est essentiel pour mesurer la diversification.")
+            
+            # Calcul de la matrice
+            corr_matrix = daily_returns.corr()
+            
+            # Affichage avec une carte de chaleur (Heatmap)
+            fig_corr = px.imshow(corr_matrix, text_auto=True, color_continuous_scale='RdBu_r', zmin=-1, zmax=1)
+            st.plotly_chart(fig_corr, use_container_width=True)
+
+        # Statistiques du Portefeuille
+        st.markdown("---")
+        st.subheader("📊 Statistiques du Portefeuille")
+        
+        # Calcul Volatilité (Annualisée)
+        volatility = portfolio_return.std() * (252 ** 0.5)
+        # Calcul Rendement Total
+        total_ret = cumulative_portfolio.iloc[-1] - 100
+        
+        stat_col1, stat_col2, stat_col3 = st.columns(3)
+        stat_col1.metric("Rendement Total", f"{total_ret:.2f} %")
+        stat_col2.metric("Volatilité Annualisée", f"{volatility*100:.2f} %")
+        stat_col3.metric("Nombre d'actifs", len(tickers))
+
+        # Affichage des données brutes
+        with st.expander("Voir les données brutes"):
+            st.dataframe(closes.tail())
+
+    except Exception as e:
+        st.error(f"Une erreur est survenue : {e}")
+        st.write("Vérifiez les tickers ou votre connexion internet.")
