@@ -1,28 +1,33 @@
+"""
+Fonctions de calcul des métriques de performance
+"""
 import numpy as np
 import pandas as pd
+from typing import Dict, Optional
 
 
-def calculate_returns(prices):
+def calculate_returns(prices: pd.Series) -> pd.Series:
     """Calculate returns from price series"""
     return prices.pct_change().dropna()
 
 
-def calculate_cumulative_returns(returns):
+def calculate_cumulative_returns(returns: pd.Series) -> pd.Series:
     """Calculate cumulative returns"""
     return (1 + returns).cumprod()
 
 
-def calculate_sharpe_ratio(returns, risk_free_rate=0.02, periods_per_year=252):
+def calculate_sharpe_ratio(returns: pd.Series, risk_free_rate: float = 0.02, 
+                          periods_per_year: int = 252) -> float:
     """
     Calculate Sharpe ratio
     
     Args:
-        returns (pd.Series): Returns series
-        risk_free_rate (float): Annual risk-free rate
-        periods_per_year (int): Trading periods per year (252 for daily)
+        returns: Returns series
+        risk_free_rate: Annual risk-free rate
+        periods_per_year: Trading periods per year (252 for daily)
     
     Returns:
-        float: Sharpe ratio
+        Sharpe ratio
     """
     if len(returns) == 0:
         return 0.0
@@ -34,15 +39,15 @@ def calculate_sharpe_ratio(returns, risk_free_rate=0.02, periods_per_year=252):
     return np.sqrt(periods_per_year) * excess_returns.mean() / excess_returns.std()
 
 
-def calculate_max_drawdown(cumulative_returns):
+def calculate_max_drawdown(cumulative_returns: pd.Series) -> float:
     """
     Calculate maximum drawdown
     
     Args:
-        cumulative_returns (pd.Series): Cumulative returns series
+        cumulative_returns: Cumulative returns series
     
     Returns:
-        float: Maximum drawdown as percentage
+        Maximum drawdown as percentage
     """
     if len(cumulative_returns) == 0:
         return 0.0
@@ -52,16 +57,16 @@ def calculate_max_drawdown(cumulative_returns):
     return drawdown.min() * 100
 
 
-def calculate_volatility(returns, periods_per_year=252):
+def calculate_volatility(returns: pd.Series, periods_per_year: int = 252) -> float:
     """
     Calculate annualized volatility
     
     Args:
-        returns (pd.Series): Returns series
-        periods_per_year (int): Trading periods per year
+        returns: Returns series
+        periods_per_year: Trading periods per year
     
     Returns:
-        float: Annualized volatility as percentage
+        Annualized volatility as percentage
     """
     if len(returns) == 0:
         return 0.0
@@ -69,17 +74,18 @@ def calculate_volatility(returns, periods_per_year=252):
     return returns.std() * np.sqrt(periods_per_year) * 100
 
 
-def calculate_sortino_ratio(returns, risk_free_rate=0.02, periods_per_year=252):
+def calculate_sortino_ratio(returns: pd.Series, risk_free_rate: float = 0.02, 
+                           periods_per_year: int = 252) -> float:
     """
     Calculate Sortino ratio (uses downside deviation)
     
     Args:
-        returns (pd.Series): Returns series
-        risk_free_rate (float): Annual risk-free rate
-        periods_per_year (int): Trading periods per year
+        returns: Returns series
+        risk_free_rate: Annual risk-free rate
+        periods_per_year: Trading periods per year
     
     Returns:
-        float: Sortino ratio
+        Sortino ratio
     """
     if len(returns) == 0:
         return 0.0
@@ -94,16 +100,16 @@ def calculate_sortino_ratio(returns, risk_free_rate=0.02, periods_per_year=252):
     return np.sqrt(periods_per_year) * excess_returns.mean() / downside_std
 
 
-def calculate_calmar_ratio(returns, cumulative_returns):
+def calculate_calmar_ratio(returns: pd.Series, cumulative_returns: pd.Series) -> float:
     """
     Calculate Calmar ratio (return / max drawdown)
     
     Args:
-        returns (pd.Series): Returns series
-        cumulative_returns (pd.Series): Cumulative returns series
+        returns: Returns series
+        cumulative_returns: Cumulative returns series
     
     Returns:
-        float: Calmar ratio
+        Calmar ratio
     """
     if len(returns) == 0:
         return 0.0
@@ -117,7 +123,7 @@ def calculate_calmar_ratio(returns, cumulative_returns):
     return annual_return / max_dd
 
 
-def calculate_win_rate(returns):
+def calculate_win_rate(returns: pd.Series) -> float:
     """Calculate percentage of positive returns"""
     if len(returns) == 0:
         return 0.0
@@ -125,16 +131,17 @@ def calculate_win_rate(returns):
     return (returns > 0).sum() / len(returns) * 100
 
 
-def generate_performance_summary(prices, strategy_returns=None):
+def generate_performance_summary(prices: pd.Series, 
+                                strategy_returns: Optional[pd.Series] = None) -> Dict:
     """
     Generate complete performance summary
     
     Args:
-        prices (pd.Series): Price series
-        strategy_returns (pd.Series, optional): Strategy returns if different from buy-hold
+        prices: Price series
+        strategy_returns: Strategy returns if different from buy-hold
     
     Returns:
-        dict: Performance metrics
+        Dictionary with performance metrics
     """
     returns = calculate_returns(prices)
     cum_returns = calculate_cumulative_returns(returns)
@@ -144,16 +151,41 @@ def generate_performance_summary(prices, strategy_returns=None):
         cum_returns = calculate_cumulative_returns(returns)
     
     metrics = {
-        'Total Return (%)': (cum_returns.iloc[-1] - 1) * 100 if len(cum_returns) > 0 else 0,
-        'Annualized Return (%)': returns.mean() * 252 * 100 if len(returns) > 0 else 0,
-        'Volatility (%)': calculate_volatility(returns),
-        'Sharpe Ratio': calculate_sharpe_ratio(returns),
-        'Sortino Ratio': calculate_sortino_ratio(returns),
-        'Max Drawdown (%)': calculate_max_drawdown(cum_returns),
-        'Calmar Ratio': calculate_calmar_ratio(returns, cum_returns),
-        'Win Rate (%)': calculate_win_rate(returns),
-        'Best Day (%)': returns.max() * 100 if len(returns) > 0 else 0,
-        'Worst Day (%)': returns.min() * 100 if len(returns) > 0 else 0
+        'Total Return (%)': round((cum_returns.iloc[-1] - 1) * 100, 2) if len(cum_returns) > 0 else 0,
+        'Annualized Return (%)': round(returns.mean() * 252 * 100, 2) if len(returns) > 0 else 0,
+        'Volatility (%)': round(calculate_volatility(returns), 2),
+        'Sharpe Ratio': round(calculate_sharpe_ratio(returns), 2),
+        'Sortino Ratio': round(calculate_sortino_ratio(returns), 2),
+        'Max Drawdown (%)': round(calculate_max_drawdown(cum_returns), 2),
+        'Calmar Ratio': round(calculate_calmar_ratio(returns, cum_returns), 2),
+        'Win Rate (%)': round(calculate_win_rate(returns), 2),
+        'Best Day (%)': round(returns.max() * 100, 2) if len(returns) > 0 else 0,
+        'Worst Day (%)': round(returns.min() * 100, 2) if len(returns) > 0 else 0
     }
     
     return metrics
+
+
+def format_metrics_for_display(metrics: Dict) -> Dict:
+    """
+    Format metrics for nice display
+    
+    Args:
+        metrics: Raw metrics dictionary
+    
+    Returns:
+        Formatted metrics dictionary
+    """
+    formatted = {}
+    for key, value in metrics.items():
+        if isinstance(value, (int, float)):
+            if 'Ratio' in key:
+                formatted[key] = f"{value:.2f}"
+            elif '%' in key:
+                formatted[key] = f"{value:+.2f}%"
+            else:
+                formatted[key] = f"{value:,.2f}"
+        else:
+            formatted[key] = str(value)
+    
+    return formatted
