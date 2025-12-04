@@ -20,7 +20,7 @@ pyyaml==6.0.1
 python-dateutil==2.8.2
 
 # Machine Learning (bonus feature)
-scikit-learn==1.3.2
-tensorflow==2.15.0
+#scikit-learn==1.3.2
+#tensorflow==2.15.0
 
 
