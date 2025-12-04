@@ -1,4 +1,5 @@
 import streamlit as st
+
 # Importation des deux modules (fichiers locaux)
 import quant_b_module
 import quant_a_module
