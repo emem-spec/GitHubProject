@@ -20,8 +20,8 @@ from config.settings import *
 from data.fetcher import DataFetcher
 from strategies.buy_hold import BuyHoldStrategy
 from strategies.momentum import MomentumStrategy, RSIStrategy
-from analysis.backtester import Backtester
-from analysis.metrics import generate_performance_summary, format_metrics_for_display
+from utils.backtester import Backtester
+from utils.metrics import generate_performance_summary, format_metrics_for_display
 from visualization.charts import (
     create_price_strategy_chart, 
     create_drawdown_chart,
