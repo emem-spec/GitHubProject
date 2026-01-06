@@ -10,25 +10,19 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- MATH & FINANCE FUNCTIONS ---
-def get_data(tickers, period):
-    """Download adjusted close data for multiple assets"""
+
+def get_data(tickers, period, interval="1d"):
     try:
-        # auto_adjust=True to handle splits/dividends
-        df = yf.download(tickers, period=period, auto_adjust=True)
-        
-        # Handle cases where yfinance returns different structures
+        df = yf.download(tickers, period=period, interval=interval, auto_adjust=True)
         if 'Close' in df.columns:
             data = df['Close']
         else:
             data = df
-        
-        # Clean data
-        data = data.dropna()
-        return data
+        return data.dropna()
     except Exception as e:
         logger.error(f"Download error: {e}")
         return None
+
 
 def calculate_metrics(series):
     """Calculate key metrics (Returns, Volatility, Sharpe, Drawdown)"""
@@ -43,7 +37,10 @@ def calculate_metrics(series):
     # Sharpe Ratio (Risk-free rate assumed at 2%)
     risk_free_rate = 0.02
     annualized_return = returns.mean() * 252
-    sharpe = (annualized_return - risk_free_rate) / volatility if volatility != 0 else 0
+    if volatility != 0 :
+        sharpe = (annualized_return - risk_free_rate) / volatility
+    else :
+        sharpe=0
     
     # Max Drawdown
     cum_returns = (1 + returns).cumprod()
@@ -58,37 +55,67 @@ def calculate_metrics(series):
         "Max Drawdown": max_drawdown
     }
 
-# --- MAIN UI FUNCTION ---
+# Main function
 def run_quant_b():
     # Custom CSS for metric cards
     st.markdown("""
     <style>
         .metric-card { background-color: #f0f2f6; padding: 10px; border-radius: 5px; border-left: 5px solid #ff4b4b; }
+        .live-badge { background-color: #d4edda; color: #155724; padding: 5px; border-radius: 5px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-    st.header("📊 Multi-Asset Portfolio Manager (Quant B)")
+    st.header(" Multi-Asset Portfolio Manager (Quant B)")
+    
+    st.markdown("### Live Market Monitor (24h)")
+    
+    col_refresh, col_time = st.columns([1, 3])
+    with col_refresh:
+        auto_refresh = st.checkbox("Auto-refresh (5 min)", value=True)
+    
+    with col_time:
+        now = datetime.now().strftime("%d %B %Y - %H:%M:%S")
+        st.markdown(f"<span class='live-badge'>Last Update: {now}</span>", unsafe_allow_html=True)
+
+    default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA"
+
+    with st.spinner("Fetching live data..."):
+        live_data = get_data(default_tickers, period="5d", interval="15m")
+    
+    if live_data is not None and not live_data.empty:
+        # Normalize to 100 for comparison
+        normalized_live = (live_data / live_data.iloc[0]) * 100
+        
+        # Plot Intraday
+        fig_live = px.line(normalized_live, title="Short Term Trends (Last 5 Days - 15m interval)")
+        fig_live.update_layout(height=350, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_live, use_container_width=True)
+        
+        # Display Current Values
+        cols = st.columns(len(default_tickers))
+        for i, ticker in enumerate(default_tickers):
+            if ticker in live_data.columns:
+                last_price = live_data[ticker].iloc[-1]
+                prev_price = live_data[ticker].iloc[-2]
+                delta = (last_price - prev_price) / prev_price * 100
+                cols[i].metric(ticker, f"${last_price:.2f}", f"{delta:.2f}%")
+    
     st.markdown("---")
 
-    # --- 1. SIDEBAR CONFIGURATION ---
-    st.sidebar.header("1. Investment Universe")
-    
-    default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA"
+    st.sidebar.header("Investment Universe")
     tickers_input = st.sidebar.text_input("Tickers (comma separated)", default_tickers)
     tickers = [x.strip().upper() for x in tickers_input.split(',') if x.strip() != '']
     
     period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
 
-    # --- 2. DATA RETRIEVAL ---
     if len(tickers) < 3:
-        st.error("⚠️ The project requires at least 3 assets for diversification.")
+        st.error("The project requires at least 3 assets for diversification.")
         return
 
-    with st.spinner("Fetching market data..."):
-        data = get_data(tickers, period)
+    data = get_data(tickers, period, interval="1d")
 
     if data is None or data.empty:
-        st.error("Error fetching data. Please check the tickers.")
+        st.error("Error fetching data historical data")
         return
 
     # Check available tickers
@@ -101,8 +128,8 @@ def run_quant_b():
         st.error("Not enough valid data to build a portfolio.")
         return
 
-    # --- 3. DYNAMIC ALLOCATION (SLIDERS) ---
-    st.sidebar.header("2. Allocation")
+    # Allocation
+    st.sidebar.header("Allocation")
     st.sidebar.write("Portfolio Weights:")
     
     weights_input = []
@@ -121,7 +148,7 @@ def run_quant_b():
     st.sidebar.markdown("---")
     st.sidebar.info(f"**Effective Weights:** {np.round(weights*100, 1)}%")
 
-    # --- 4. PORTFOLIO CALCULATIONS ---
+    # Portfolio calculations metrics
     # Daily returns of assets
     returns_df = data.pct_change().dropna()
     
@@ -137,10 +164,10 @@ def run_quant_b():
     chart_data = assets_value.copy()
     chart_data['PORTFOLIO'] = portfolio_value
 
-    # --- 5. DASHBOARD VISUALIZATION ---
+    # Dashboard display
     
-    # A. Performance Chart (Line Chart)
-    st.subheader("📈 Assets vs Portfolio Comparison (Base 100)")
+    #  Performance Chart (Line Chart)
+    st.subheader("Assets vs Portfolio Comparison (Base 100)")
     
     fig_perf = go.Figure()
     # Plot assets in gray/thin
@@ -156,7 +183,7 @@ def run_quant_b():
     st.plotly_chart(fig_perf, use_container_width=True)
 
     # B. Metrics & Diversification
-    st.subheader("📊 Performance & Risk Metrics")
+    st.subheader("Performance & Risk Metrics")
     
     # Calculate Portfolio Metrics
     port_metrics = calculate_metrics(portfolio_value)
