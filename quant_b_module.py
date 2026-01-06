@@ -124,8 +124,8 @@ def run_quant_b():
     
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Return", f"{port_metrics['Total Return']*100:.2f} %")
+    c2.metric("Volatility", f"{port_metrics['Volatility']*100:.2f} %")
     c3.metric("Max Drawdown", f"{port_metrics['Max Drawdown']*100:.2f} %",help="Maximum observed loss from a peak to a trough")
-    c3.metric("Volatility", f"{port_metrics['Volatility']*100:.2f} %")
     c4.metric("Calmar Ratio", f"{port_metrics['Calmar Ratio']:.2f}", help="Annual Return / Abs(Max Drawdown)")
     
     c5, c6, c7, c8 = st.columns(4)
