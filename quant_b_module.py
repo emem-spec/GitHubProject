@@ -93,7 +93,7 @@ def run_quant_b():
     clean_input = tickers_input_raw.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
     tickers = [x.strip().upper() for x in clean_input.split(',') if x.strip() != '']
 
-    period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
+    period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2, key="qb_period")
     
     if len(tickers) < 3:
         st.error("The project requires at least 3 assets for diversification.")
