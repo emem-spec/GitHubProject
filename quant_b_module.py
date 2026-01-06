@@ -106,7 +106,7 @@ def run_quant_b():
     st.markdown("---")
 
     st.sidebar.header("Investment Universe")
-    tickers_input = st.sidebar.text_input("Tickers (comma separated)", default_tickers)
+    tickers_input = st.sidebar.text_input("Tickers (comma separated)", default_tickers_list)
     tickers = [x.strip().upper() for x in tickers_input.split(',') if x.strip() != '']
     
     period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
