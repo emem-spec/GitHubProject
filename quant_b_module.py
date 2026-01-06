@@ -107,7 +107,7 @@ def run_quant_b():
     st.markdown("---")
 
     st.sidebar.header("Investment Universe")
-    tickers_input = st.sidebar.text_input("Tickers (comma separated)", default_tickers_list)
+    tickers_input = st.sidebar.text_input("Tickers (comma separated)", key="tickers_input")
     clean_tickers_input = tickers_input.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
     tickers = [x.strip().upper() for x in clean_tickers_input.split(',') if x.strip() != '']
     
