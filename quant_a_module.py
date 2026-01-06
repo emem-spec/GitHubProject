@@ -31,6 +31,10 @@ from visualization.charts import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# ==========================================
+# 5. FONCTION PRINCIPALE (UI)
+# ==========================================
 def run_quant_a():
     """
     Fonction principale du module Quant A intégrée dans l'application globale.
