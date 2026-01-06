@@ -6,7 +6,7 @@ st.set_page_config(page_title="Project Finance - Group 12", layout="wide")
 
 # Sidebar of Navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Menu", "Module Quant A (Mono-Actif)", "Module Quant B (Portefeuille)"])
+page = st.sidebar.radio("Go to", ["Menu", "Module Quant A (Mono-Actif)", "Module Quant B (Portfolio)"])
 
 if page == "Menu":
     st.title("Project Python Git - Group 12")
@@ -17,5 +17,5 @@ if page == "Menu":
 elif page == "Module Quant A (Mono-Actif)":
     quant_a_module.run_quant_a()
 
-elif page == "Module Quant B (Portefeuille)":
+elif page == "Module Quant B (Portfolio)":
     quant_b_module.run_quant_b()
