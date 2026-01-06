@@ -81,14 +81,14 @@ def run_quant_b():
     default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA"
 
     with st.spinner("Fetching live data..."):
-        live_data = get_data(default_tickers, period="5d", interval="15m")
+        live_data = get_data(default_tickers, period="5d", interval="5m")
     
     if live_data is not None and not live_data.empty:
         # Normalize to 100 for comparison
         normalized_live = (live_data / live_data.iloc[0]) * 100
         
         # Plot Intraday
-        fig_live = px.line(normalized_live, title="Short Term Trends (Last 5 Days - 15m interval)")
+        fig_live = px.line(normalized_live, title="Short Term Trends (Last 5 Days - 5m interval)")
         fig_live.update_layout(height=350, margin=dict(l=0, r=0, t=30, b=0))
         st.plotly_chart(fig_live, use_container_width=True)
         
@@ -242,3 +242,6 @@ def run_quant_b():
     # D. Raw Data
     with st.expander("View Raw Data"):
         st.dataframe(data.tail())
+    if auto_refresh:
+        time.sleep(300) # 300 seconds = 5 minutes
+        st.rerun()
