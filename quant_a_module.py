@@ -1,24 +1,26 @@
-"""
-Module Quant A - Single Asset Analysis
-Nom du fichier : quant_a_module.py
-"""
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-import sys
 import logging
-import time # Importé pour le refresh
+from datetime import datetime
+import time
 
-# Imports locaux
-# Note : Assurez-vous que le dossier s'appelle bien 'analysis' et non 'utils'
-from config.settings import *
+# --- IMPORTS MIS À JOUR (utils au lieu de analysis) ---
+from config.settings import (
+    DEFAULT_ASSETS, 
+    LOOKBACK_PERIODS, 
+    DEFAULT_INITIAL_CAPITAL, 
+    STRATEGY_DEFAULTS, 
+    REFRESH_INTERVAL
+)
 from data.fetcher import DataFetcher
 from strategies.buy_hold import BuyHoldStrategy
 from strategies.momentum import MomentumStrategy, RSIStrategy
-from utils.backtester import Backtester 
-from utils.metrics import generate_performance_summary, format_metrics_for_display
+
+# Changement ici : analysis -> utils
+from utils.backtester import Backtester
+from utils.metrics import generate_performance_summary
+
 from visualization.charts import (
-    create_price_strategy_chart, 
+    create_price_strategy_chart,
     create_drawdown_chart,
     create_moving_averages_chart,
     create_rsi_chart,
@@ -26,39 +28,32 @@ from visualization.charts import (
 )
 
 # Configuration du logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def run_quant_a():
     """
-    Fonction principale qui contient toute la logique du module Quant A.
-    Appelée par app.py.
+    Fonction principale du module Quant A intégrée dans l'application globale.
     """
     
-    # CSS personnalisé (Déplacé ici pour être chargé quand le module s'ouvre)
+    # Injection CSS (Scope local à la fonction pour ne pas casser le style global)
     st.markdown("""
     <style>
-        .main-header {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #1f77b4;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .metric-card {
-            background-color: #f0f2f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #1f77b4;
-        }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    # Titre principal
-    st.markdown('<p class="main-header">📊 Single Asset Quantitative Analysis</p>', 
-                unsafe_allow_html=True)
+    st.header("📊 Single Asset Quantitative Analysis (Quant A)")
     st.markdown("---")
 
-    # === SIDEBAR - Configuration ===
+    # ==========================================
+    # 1. SIDEBAR CONFIGURATION
+    # ==========================================
     st.sidebar.header("⚙️ Configuration (Quant A)")
 
     # Sélection de l'actif
@@ -66,7 +61,7 @@ def run_quant_a():
         "Asset",
         options=list(DEFAULT_ASSETS.keys()),
         index=0,
-        key="qa_asset_select" # Ajout de clés uniques pour éviter les conflits
+        key="qa_asset_select" # Clés uniques pour éviter les conflits avec Quant B
     )
     ticker = DEFAULT_ASSETS[asset_name]
 
@@ -75,8 +70,8 @@ def run_quant_a():
         "Period",
         options=list(LOOKBACK_PERIODS.keys()),
         format_func=lambda x: LOOKBACK_PERIODS[x],
-        index=2,  # Default: 1 mois
-        key="qa_period"
+        index=2, # Default: 1 mois
+        key="qa_period_select"
     )
 
     # Intervalle
@@ -89,8 +84,8 @@ def run_quant_a():
     interval_label = st.sidebar.selectbox(
         "Interval",
         options=list(interval_options.keys()),
-        index=3,  # Default: 1 jour
-        key="qa_interval"
+        index=3, # Default: 1 jour
+        key="qa_interval_select"
     )
     interval = interval_options[interval_label]
 
@@ -101,7 +96,7 @@ def run_quant_a():
     strategy_name = st.sidebar.selectbox(
         "Trading Strategy",
         ["Buy & Hold", "Momentum", "RSI"],
-        key="qa_strategy"
+        key="qa_strategy_select"
     )
 
     # Capital initial
@@ -111,30 +106,33 @@ def run_quant_a():
         max_value=1000000,
         value=DEFAULT_INITIAL_CAPITAL,
         step=1000,
-        key="qa_capital"
+        key="qa_capital_input"
     )
 
     # Paramètres de stratégie
     st.sidebar.subheader("🔧 Strategy Parameters")
 
-    # Initialisation des variables par défaut pour éviter les erreurs d'undefined
-    short_window, long_window = 20, 50
-    rsi_period, oversold, overbought = 14, 30, 70
+    # Initialisation des variables par défaut
+    short_window = STRATEGY_DEFAULTS["momentum"]["short_window"]
+    long_window = STRATEGY_DEFAULTS["momentum"]["long_window"]
+    rsi_period = STRATEGY_DEFAULTS["rsi"]["period"]
+    oversold = STRATEGY_DEFAULTS["rsi"]["oversold"]
+    overbought = STRATEGY_DEFAULTS["rsi"]["overbought"]
 
     if strategy_name == "Momentum":
         short_window = st.sidebar.slider(
             "Short MA Window",
             min_value=5,
             max_value=50,
-            value=STRATEGY_DEFAULTS["momentum"]["short_window"],
-            key="qa_mom_short"
+            value=short_window,
+            key="qa_short_window"
         )
         long_window = st.sidebar.slider(
             "Long MA Window",
             min_value=20,
             max_value=200,
-            value=STRATEGY_DEFAULTS["momentum"]["long_window"],
-            key="qa_mom_long"
+            value=long_window,
+            key="qa_long_window"
         )
 
     elif strategy_name == "RSI":
@@ -142,89 +140,87 @@ def run_quant_a():
             "RSI Period",
             min_value=5,
             max_value=30,
-            value=STRATEGY_DEFAULTS["rsi"]["period"],
-            key="qa_rsi_per"
+            value=rsi_period,
+            key="qa_rsi_period"
         )
         oversold = st.sidebar.slider(
             "Oversold Threshold",
             min_value=20,
             max_value=40,
-            value=STRATEGY_DEFAULTS["rsi"]["os"]
+            value=oversold,
+            key="qa_rsi_oversold"
         )
         overbought = st.sidebar.slider(
             "Overbought Threshold",
             min_value=60,
             max_value=80,
-            value=STRATEGY_DEFAULTS["rsi"]["ob"]
+            value=overbought,
+            key="qa_rsi_overbought"
         )
 
     st.sidebar.markdown("---")
 
     # Options d'affichage
     st.sidebar.subheader("📊 Display Options")
-    show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_sig")
-    show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_ind")
-    auto_refresh = st.sidebar.checkbox("Auto-refresh (5 min)", value=False, key="qa_refresh")
+    show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_signals")
+    show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_indicators")
+    auto_refresh = st.sidebar.checkbox("Auto-refresh (5 min)", value=False, key="qa_auto_refresh")
 
     # Bouton de rafraîchissement
-    if st.sidebar.button("🔄 Refresh Data", key="qa_btn_refresh"):
+    if st.sidebar.button("🔄 Refresh Data", key="qa_refresh_btn"):
         st.cache_data.clear()
         st.rerun()
 
-    st.sidebar.markdown("---")
-    st.sidebar.info(f"🕐 Last update: {datetime.now().strftime('%H:%M:%S')}")
-
-    # === MAIN CONTENT ===
-
-    # Fonction de chargement des données avec cache
+    # ==========================================
+    # 2. DATA LOADING & PROCESSING
+    # ==========================================
+    
+    # Fonction de chargement avec cache (définie en local)
     @st.cache_data(ttl=REFRESH_INTERVAL)
-    def load_data(ticker, period, interval):
-        """Charge les données avec cache"""
+    def load_data_cached(ticker_symbol, period_val, interval_val):
         try:
-            fetcher = DataFetcher(ticker, period, interval)
-            df = fetcher.get_historical_data()
-            return df
+            fetcher = DataFetcher(ticker_symbol, period_val, interval_val)
+            return fetcher.get_historical_data()
         except Exception as e:
             logger.error(f"Error loading data: {e}")
             return None
 
     # Chargement des données
     with st.spinner(f'📥 Loading data for {asset_name}...'):
-        df = load_data(ticker, period, interval)
+        df = load_data_cached(ticker, period, interval)
 
     if df is None or df.empty:
         st.error(f"❌ Unable to load data for {asset_name}. Please check the ticker symbol.")
-        return # On retourne simplement au lieu de st.stop() pour ne pas casser l'app principale
+        return # Arrêt de l'exécution du module si pas de données
 
-    # === MÉTRIQUES PRINCIPALES ===
+    # ==========================================
+    # 3. MÉTRIQUES MARCHÉ
+    # ==========================================
     st.subheader("💰 Current Market Data")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
     current_price = df['Close'].iloc[-1]
-    prev_price = df['Close'].iloc[0]
+    prev_price = df['Close'].iloc[0] 
     price_change = current_price - prev_price
     price_change_pct = (price_change / prev_price) * 100
+    
+    volatility_val = df['Close'].pct_change().std() * 100
 
-    with col1:
-        st.metric("💵 Current Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
-    with col2:
-        st.metric("📈 High", f"€{df['High'].max():.2f}")
-    with col3:
-        st.metric("📉 Low", f"€{df['Low'].min():.2f}")
-    with col4:
-        st.metric("📊 Volume", f"{df['Volume'].iloc[-1]:,.0f}")
-    with col5:
-        volatility = df['Close'].pct_change().std() * 100
-        st.metric("📉 Volatility", f"{volatility:.2f}%")
+    col1.metric("💵 Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
+    col2.metric("📈 High", f"€{df['High'].max():.2f}")
+    col3.metric("📉 Low", f"€{df['Low'].min():.2f}")
+    col4.metric("📊 Volume", f"{df['Volume'].iloc[-1]:,.0f}")
+    col5.metric("⚡ Volatility", f"{volatility_val:.2f}%")
 
     st.markdown("---")
 
-    # === BACKTESTING ===
+    # ==========================================
+    # 4. BACKTESTING ENGINE
+    # ==========================================
     st.subheader(f"🎯 Backtesting - {strategy_name}")
 
-    # Sélection de la stratégie
-    strategy = None
+    # Instanciation de la stratégie
     if strategy_name == "Buy & Hold":
         strategy = BuyHoldStrategy(df, initial_capital)
     elif strategy_name == "Momentum":
@@ -232,84 +228,75 @@ def run_quant_a():
     elif strategy_name == "RSI":
         strategy = RSIStrategy(df, initial_capital, rsi_period, oversold, overbought)
 
-    # Exécuter le backtest
-    if strategy:
-        backtester = Backtester(df, initial_capital)
-        results = backtester.run(strategy)
+    # Exécution du Backtest
+    backtester = Backtester(df, initial_capital)
+    results = backtester.run(strategy)
 
-        # Graphique principal
-        st.plotly_chart(
-            create_price_strategy_chart(results, asset_name, show_signals),
-            use_container_width=True
-        )
+    # Graphique Principal
+    st.plotly_chart(
+        create_price_strategy_chart(results, asset_name, show_signals),
+        use_container_width=True
+    )
 
-        # === MÉTRIQUES DE PERFORMANCE ===
-        st.subheader("📊 Performance Metrics")
+    # ==========================================
+    # 5. MÉTRIQUES PERFORMANCE
+    # ==========================================
+    st.subheader("📊 Performance Metrics")
 
-        strategy_returns = results['Strategy_Returns'].dropna()
-        metrics = generate_performance_summary(results['Close'], strategy_returns)
+    strategy_returns = results['Strategy_Returns'].dropna()
+    metrics = generate_performance_summary(results['Close'], strategy_returns)
 
-        col1, col2, col3, col4, col5 = st.columns(5)
-        with col1: st.metric("Total Return", f"{metrics['Total Return (%)']:.2f}%")
-        with col2: st.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2f}")
-        with col3: st.metric("Max Drawdown", f"{metrics['Max Drawdown (%)']:.2f}%")
-        with col4: st.metric("Volatility", f"{metrics['Volatility (%)']:.2f}%")
-        with col5: st.metric("Win Rate", f"{metrics['Win Rate (%)']:.2f}%")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Total Return", f"{metrics['Total Return (%)']:.2f}%")
+    c2.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2f}")
+    c3.metric("Max Drawdown", f"{metrics['Max Drawdown (%)']:.2f}%")
+    c4.metric("Annual Return", f"{metrics['Annualized Return (%)']:.2f}%")
+    
+    final_val = results['Portfolio_Value'].iloc[-1]
+    delta_val = final_val - initial_capital
+    c5.metric("Portfolio Value", f"€{final_val:,.2f}", f"{delta_val:+.2f} €")
 
-        # Métriques supplémentaires
-        with st.expander("📈 Additional Metrics"):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Annualized Return", f"{metrics['Annualized Return (%)']:.2f}%")
-                st.metric("Sortino Ratio", f"{metrics['Sortino Ratio']:.2f}")
-            with col2:
-                st.metric("Best Day", f"{metrics['Best Day (%)']:.2f}%")
-                st.metric("Worst Day", f"{metrics['Worst Day (%)']:.2f}%")
-            with col3:
-                st.metric("Calmar Ratio", f"{metrics['Calmar Ratio']:.2f}")
-                final_value = results['Portfolio_Value'].iloc[-1]
-                st.metric("Final Portfolio Value", f"€{final_value:,.2f}")
+    # ==========================================
+    # 6. ANALYSES SUPPLÉMENTAIRES
+    # ==========================================
+    if show_indicators:
+        st.subheader("📉 Additional Analysis")
+        tab1, tab2, tab3 = st.tabs(["Drawdown", "Returns Distribution", "Technical Indicators"])
+        
+        with tab1:
+            st.plotly_chart(create_drawdown_chart(results), use_container_width=True)
+        with tab2:
+            st.plotly_chart(create_returns_distribution(strategy_returns), use_container_width=True)
+        with tab3:
+            if strategy_name == "Momentum":
+                st.plotly_chart(create_moving_averages_chart(results), use_container_width=True)
+            elif strategy_name == "RSI":
+                st.plotly_chart(create_rsi_chart(results), use_container_width=True)
+            else:
+                st.info("No technical indicators for Buy & Hold strategy")
 
-        st.markdown("---")
-
-        # === GRAPHIQUES SUPPLÉMENTAIRES ===
-        if show_indicators:
-            st.subheader("📉 Additional Analysis")
-            tab1, tab2, tab3 = st.tabs(["Drawdown", "Returns Distribution", "Technical Indicators"])
+    # ==========================================
+    # 7. DONNÉES & TRADES
+    # ==========================================
+    with st.expander("📋 View Raw Data & Trade History"):
+        col_data, col_trades = st.columns(2)
+        
+        with col_data:
+            st.markdown("**Latest Market Data**")
+            st.dataframe(
+                results[['Close', 'Position', 'Returns', 'Strategy_Returns', 'Portfolio_Value']].tail(50),
+                use_container_width=True
+            )
             
-            with tab1: st.plotly_chart(create_drawdown_chart(results), use_container_width=True)
-            with tab2: st.plotly_chart(create_returns_distribution(strategy_returns), use_container_width=True)
-            with tab3:
-                if strategy_name == "Momentum":
-                    st.plotly_chart(create_moving_averages_chart(results), use_container_width=True)
-                elif strategy_name == "RSI":
-                    st.plotly_chart(create_rsi_chart(results), use_container_width=True)
-                else:
-                    st.info("No technical indicators for Buy & Hold strategy")
-
-        # === DONNÉES BRUTES ===
-        with st.expander("📋 View Raw Data"):
-            st.dataframe(results[['Close', 'Position', 'Returns', 'Strategy_Returns', 'Portfolio_Value', 'Drawdown']].tail(50), use_container_width=True)
-
-        # === TRADES HISTORY ===
-        with st.expander("💼 Trade History"):
+        with col_trades:
+            st.markdown("**Trade Logs**")
             trades = backtester.get_trades()
             if not trades.empty:
                 st.dataframe(trades, use_container_width=True)
-                col1, col2, col3 = st.columns(3)
-                with col1: st.metric("Total Trades", len(trades))
-                with col2: st.metric("Avg Return per Trade", f"{trades['Return (%)'].mean():.2f}%")
-                with col3: st.metric("Avg Trade Duration", f"{trades['Duration'].mean():.1f} days" if 'Duration' in trades.columns else "N/A")
             else:
-                st.info("No trades executed")
+                st.info("No trades executed.")
 
-    # === FOOTER ===
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"<div style='text-align: center; color: gray;'><p>Quant A Module - Single Asset Analysis</p></div>", unsafe_allow_html=True)
-
-    # Auto-refresh
+    # Logique d'auto-refresh
     if auto_refresh:
         time.sleep(REFRESH_INTERVAL)
         st.rerun()
