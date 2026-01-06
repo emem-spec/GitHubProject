@@ -80,7 +80,8 @@ def run_quant_b():
 
     if 'tickers_input' not in st.session_state:
         st.session_state.tickers_input = "AAPL, MSFT, GOOGL, AMZN, TSLA"
-    default_tickers_list = [x.strip().upper() for x in st.session_state.tickers_input.split(',') if x.strip() != '']
+    clean_input = st.session_state.tickers_input.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
+    default_tickers_list = [x.strip().upper() for x in clean_input.split(',') if x.strip() != '']
 
     with st.spinner("Fetching live data..."):
         live_data = get_data(default_tickers_list, period="5d", interval="5m")
@@ -107,7 +108,8 @@ def run_quant_b():
 
     st.sidebar.header("Investment Universe")
     tickers_input = st.sidebar.text_input("Tickers (comma separated)", default_tickers_list)
-    tickers = [x.strip().upper() for x in tickers_input.split(',') if x.strip() != '']
+    clean_tickers_input = tickers_input.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
+    tickers = [x.strip().upper() for x in clean_tickers_input.split(',') if x.strip() != '']
     
     period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
 
