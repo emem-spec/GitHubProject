@@ -245,6 +245,12 @@ def run_quant_b():
     col3.metric("Sharpe Ratio", f"{port_metrics['Sharpe Ratio']:.2f}")
     col4.metric("Max Drawdown", f"{port_metrics['Max Drawdown']*100:.2f} %")
 
+    c5, c6, c7, c8 = st.columns(4)
+    c5.metric("Sharpe Ratio", f"{port_metrics['Sharpe Ratio']:.2f}", help="Reward per unit of total risk")
+    c6.metric("Sortino Ratio", f"{port_metrics['Sortino Ratio']:.2f}", help="Reward per unit of downside risk")
+    c7.metric("VaR (95%)", f"{port_metrics['VaR (95%)']*100:.2f} %", help="Value at Risk (Daily): Max expected loss with 95% confidence")
+    c8.metric("CVaR (95%)", f"{port_metrics['CVaR (95%)']*100:.2f} %", help="Conditional VaR: Expected loss if VaR is breached")
+
     # C. Diversification Effect (Quant B Specific)
     st.markdown("---")
     c1, c2 = st.columns([1, 1])
