@@ -3,7 +3,8 @@ import logging
 from datetime import datetime
 import time
 
-# --- IMPORTS MIS À JOUR (utils au lieu de analysis) ---
+# --- IMPORTS ---
+# On utilise bien 'utils' comme demandé précédemment
 from config.settings import (
     DEFAULT_ASSETS, 
     LOOKBACK_PERIODS, 
@@ -14,11 +15,8 @@ from config.settings import (
 from data.fetcher import DataFetcher
 from strategies.buy_hold import BuyHoldStrategy
 from strategies.momentum import MomentumStrategy, RSIStrategy
-
-# Changement ici : analysis -> utils
 from utils.backtester import Backtester
 from utils.metrics import generate_performance_summary
-
 from visualization.charts import (
     create_price_strategy_chart,
     create_drawdown_chart,
@@ -31,16 +29,13 @@ from visualization.charts import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-# ==========================================
-# 5. FONCTION PRINCIPALE (UI)
-# ==========================================
 def run_quant_a():
     """
-    Fonction principale du module Quant A intégrée dans l'application globale.
+    Fonction principale du module Quant A.
+    Tout le code d'affichage (y compris la sidebar) est encapsulé ici.
     """
     
-    # Injection CSS (Scope local à la fonction pour ne pas casser le style global)
+    # Injection CSS (Scope local)
     st.markdown("""
     <style>
     .metric-card {
@@ -58,6 +53,7 @@ def run_quant_a():
     # ==========================================
     # 1. SIDEBAR CONFIGURATION
     # ==========================================
+    # ATTENTION : Tout ce bloc est indenté pour être DANS la fonction
     st.sidebar.header("⚙️ Configuration (Quant A)")
 
     # Sélection de l'actif
@@ -65,7 +61,7 @@ def run_quant_a():
         "Asset",
         options=list(DEFAULT_ASSETS.keys()),
         index=0,
-        key="qa_asset_select" # Clés uniques pour éviter les conflits avec Quant B
+        key="qa_asset_select" # Clé unique indispensable
     )
     ticker = DEFAULT_ASSETS[asset_name]
 
@@ -116,7 +112,7 @@ def run_quant_a():
     # Paramètres de stratégie
     st.sidebar.subheader("🔧 Strategy Parameters")
 
-    # Initialisation des variables par défaut
+    # Valeurs par défaut
     short_window = STRATEGY_DEFAULTS["momentum"]["short_window"]
     long_window = STRATEGY_DEFAULTS["momentum"]["long_window"]
     rsi_period = STRATEGY_DEFAULTS["rsi"]["period"]
@@ -164,7 +160,7 @@ def run_quant_a():
 
     st.sidebar.markdown("---")
 
-    # Options d'affichage
+    # Options d'affichage (C'est ce bloc qui posait problème avant indentation)
     st.sidebar.subheader("📊 Display Options")
     show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_signals")
     show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_indicators")
@@ -176,10 +172,9 @@ def run_quant_a():
         st.rerun()
 
     # ==========================================
-    # 2. DATA LOADING & PROCESSING
+    # 2. DATA LOADING
     # ==========================================
     
-    # Fonction de chargement avec cache (définie en local)
     @st.cache_data(ttl=REFRESH_INTERVAL)
     def load_data_cached(ticker_symbol, period_val, interval_val):
         try:
@@ -189,26 +184,24 @@ def run_quant_a():
             logger.error(f"Error loading data: {e}")
             return None
 
-    # Chargement des données
     with st.spinner(f'📥 Loading data for {asset_name}...'):
         df = load_data_cached(ticker, period, interval)
 
     if df is None or df.empty:
         st.error(f"❌ Unable to load data for {asset_name}. Please check the ticker symbol.")
-        return # Arrêt de l'exécution du module si pas de données
+        return
 
     # ==========================================
-    # 3. MÉTRIQUES MARCHÉ
+    # 3. MARKET METRICS
     # ==========================================
     st.subheader("💰 Current Market Data")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
     current_price = df['Close'].iloc[-1]
-    prev_price = df['Close'].iloc[0] 
+    prev_price = df['Close'].iloc[0]
     price_change = current_price - prev_price
     price_change_pct = (price_change / prev_price) * 100
-    
     volatility_val = df['Close'].pct_change().std() * 100
 
     col1.metric("💵 Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
@@ -220,11 +213,10 @@ def run_quant_a():
     st.markdown("---")
 
     # ==========================================
-    # 4. BACKTESTING ENGINE
+    # 4. BACKTESTING
     # ==========================================
     st.subheader(f"🎯 Backtesting - {strategy_name}")
 
-    # Instanciation de la stratégie
     if strategy_name == "Buy & Hold":
         strategy = BuyHoldStrategy(df, initial_capital)
     elif strategy_name == "Momentum":
@@ -232,18 +224,16 @@ def run_quant_a():
     elif strategy_name == "RSI":
         strategy = RSIStrategy(df, initial_capital, rsi_period, oversold, overbought)
 
-    # Exécution du Backtest
     backtester = Backtester(df, initial_capital)
     results = backtester.run(strategy)
 
-    # Graphique Principal
     st.plotly_chart(
         create_price_strategy_chart(results, asset_name, show_signals),
         use_container_width=True
     )
 
     # ==========================================
-    # 5. MÉTRIQUES PERFORMANCE
+    # 5. PERFORMANCE METRICS
     # ==========================================
     st.subheader("📊 Performance Metrics")
 
@@ -261,7 +251,7 @@ def run_quant_a():
     c5.metric("Portfolio Value", f"€{final_val:,.2f}", f"{delta_val:+.2f} €")
 
     # ==========================================
-    # 6. ANALYSES SUPPLÉMENTAIRES
+    # 6. ADDITIONAL ANALYSIS
     # ==========================================
     if show_indicators:
         st.subheader("📉 Additional Analysis")
@@ -280,7 +270,7 @@ def run_quant_a():
                 st.info("No technical indicators for Buy & Hold strategy")
 
     # ==========================================
-    # 7. DONNÉES & TRADES
+    # 7. RAW DATA & TRADES
     # ==========================================
     with st.expander("📋 View Raw Data & Trade History"):
         col_data, col_trades = st.columns(2)
@@ -300,7 +290,6 @@ def run_quant_a():
             else:
                 st.info("No trades executed.")
 
-    # Logique d'auto-refresh
     if auto_refresh:
         time.sleep(REFRESH_INTERVAL)
         st.rerun()
