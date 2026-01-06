@@ -4,7 +4,6 @@ from datetime import datetime
 import time
 
 # --- IMPORTS ---
-# On utilise bien 'utils' comme demandé précédemment
 from config.settings import (
     DEFAULT_ASSETS, 
     LOOKBACK_PERIODS, 
