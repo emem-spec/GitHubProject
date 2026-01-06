@@ -95,8 +95,8 @@ def run_quant_b():
         st.plotly_chart(fig_live, use_container_width=True)
         
         # Display Current Values
-        cols = st.columns(len(default_tickers))
-        for i, ticker in enumerate(default_tickers):
+        cols = st.columns(len(default_tickers_list))
+        for i, ticker in enumerate(default_tickers_list):
             if ticker in live_data.columns:
                 last_price = live_data[ticker].iloc[-1]
                 prev_price = live_data[ticker].iloc[-2]
