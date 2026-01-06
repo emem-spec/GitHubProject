@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import logging
 from datetime import datetime
-
+import time
 # Logging Configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -78,7 +78,9 @@ def run_quant_b():
         now = datetime.now().strftime("%d %B %Y - %H:%M:%S")
         st.markdown(f"<span class='live-badge'>Last Update: {now}</span>", unsafe_allow_html=True)
 
-    default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA"
+    if 'tickers_input' not in st.session_state:
+        st.session_state.tickers_input = "AAPL, MSFT, GOOGL, AMZN, TSLA"
+    default_tickers_list = [x.strip().upper() for x in st.session_state.tickers_input.split(',') if x.strip() != '']
 
     with st.spinner("Fetching live data..."):
         live_data = get_data(default_tickers, period="5d", interval="5m")
