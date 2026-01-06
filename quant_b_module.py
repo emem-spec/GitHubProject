@@ -48,6 +48,11 @@ def run_quant_b():
     
     # Allocation Sliders
     st.sidebar.header("II) Allocation")
+    if st.sidebar.button(" Reset to Equal Weights"):
+        for t in available_tickers:
+            # We set the session state for each slider key directly
+            st.session_state[f"w_{t}"] = 1.0 / len(available_tickers)
+        st.rerun()
     st.sidebar.write("Portfolio Weights:")
     
     weights_input = []
