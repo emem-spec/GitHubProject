@@ -28,32 +28,50 @@ def get_data(tickers, period, interval="1d"):
 def calculate_metrics(series):
     """Calculate key metrics (Returns, Volatility, Sharpe, Drawdown)"""
     returns = series.pct_change().dropna()
-    
-    # Total Return
+    #  Return 
     total_return = (series.iloc[-1] / series.iloc[0]) - 1
+    annualized_return = returns.mean() * 252
     
-    # Annualized Volatility (252 trading days)
+    # Volatility (Annualized)
     volatility = returns.std() * np.sqrt(252)
     
-    # Sharpe Ratio (Risk-free rate assumed at 2%)
-    risk_free_rate = 0.02
-    annualized_return = returns.mean() * 252
-    if volatility != 0 :
-        sharpe = (annualized_return - risk_free_rate) / volatility
-    else :
-        sharpe=0
+    # (Semi-Deviation) for Sortino
+    negative_returns = returns[returns < 0]
+    downside_deviation = negative_returns.std() * np.sqrt(252)
     
-    # Max Drawdown
+    # Risk Free Rate
+    rf = 0.02
+    
+    # Ratios
+    sharpe = (annualized_return - rf) / volatility if volatility != 0 else 0
+    sortino = (annualized_return - rf) / downside_deviation if downside_deviation != 0 else 0
+    
+    # Drawdown
     cum_returns = (1 + returns).cumprod()
     running_max = cum_returns.cummax()
     drawdown = (cum_returns / running_max) - 1
     max_drawdown = drawdown.min()
     
+    calmar = annualized_return / abs(max_drawdown) if max_drawdown != 0 else 0
+    
+    # Value at Risk (VaR) - Historical 95%
+    # We look at the 5th percentile of daily returns
+    var_95 = returns.quantile(0.05)
+    
+    # Conditional VaR
+    # Average of returns that are worse than the VaR
+    cvar_95 = returns[returns <= var_95].mean()
+    
     return {
         "Total Return": total_return,
+        "Ann. Return": annualized_return,
         "Volatility": volatility,
         "Sharpe Ratio": sharpe,
-        "Max Drawdown": max_drawdown
+        "Sortino Ratio": sortino,
+        "Max Drawdown": max_drawdown,
+        "Calmar Ratio": calmar,
+        "VaR (95%)": var_95,
+        "CVaR (95%)": cvar_95
     }
 
 # Main function
