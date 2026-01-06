@@ -83,7 +83,7 @@ def run_quant_b():
     default_tickers_list = [x.strip().upper() for x in st.session_state.tickers_input.split(',') if x.strip() != '']
 
     with st.spinner("Fetching live data..."):
-        live_data = get_data(default_tickers, period="5d", interval="5m")
+        live_data = get_data(default_tickers_list, period="5d", interval="5m")
     
     if live_data is not None and not live_data.empty:
         # Normalize to 100 for comparison
