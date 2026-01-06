@@ -139,18 +139,18 @@ def run_quant_b():
         # Plot Intraday
         fig_live = go.Figure()
         
-        # 1. Plot Individual Assets (Thin/Dotted)
+        # 1. Plot Individual Assets (thin)
         for col in available_tickers:
             if col in normalized_live.columns:
                 fig_live.add_trace(go.Scatter(
                     x=normalized_live.index, 
                     y=normalized_live[col], 
                     name=col, 
-                    line=dict(width=1, dash='dot'), 
+                    line=dict(width=1), 
                     opacity=0.6
                 ))
         
-        # 2. Plot Portfolio (Bold/Blue)
+        # 2. Plot Portfolio (Bold)
         fig_live.add_trace(go.Scatter(
             x=live_portfolio_series.index, 
             y=live_portfolio_series, 
