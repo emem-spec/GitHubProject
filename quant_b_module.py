@@ -65,54 +65,18 @@ def run_quant_b():
         .live-badge { background-color: #d4edda; color: #155724; padding: 5px; border-radius: 5px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
-
+    
     st.header(" Multi-Asset Portfolio Manager (Quant B)")
-    
-    st.markdown("### Live Market Monitor (24h)")
-    
-    col_refresh, col_time = st.columns([1, 3])
-    with col_refresh:
-        auto_refresh = st.checkbox("Auto-refresh (5 min)", value=True)
-    
-    with col_time:
-        now = datetime.now().strftime("%d %B %Y - %H:%M:%S")
-        st.markdown(f"<span class='live-badge'>Last Update: {now}</span>", unsafe_allow_html=True)
 
     if 'tickers_input' not in st.session_state:
         st.session_state.tickers_input = "AAPL, MSFT, GOOGL, AMZN, TSLA"
-    clean_input = st.session_state.tickers_input.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
-    default_tickers_list = [x.strip().upper() for x in clean_input.split(',') if x.strip() != '']
-
-    with st.spinner("Fetching live data..."):
-        live_data = get_data(default_tickers_list, period="5d", interval="5m")
-    
-    if live_data is not None and not live_data.empty:
-        # Normalize to 100 for comparison
-        normalized_live = (live_data / live_data.iloc[0]) * 100
-        
-        # Plot Intraday
-        fig_live = px.line(normalized_live, title="Short Term Trends (Last 5 Days - 5m interval)")
-        fig_live.update_layout(height=350, margin=dict(l=0, r=0, t=30, b=0))
-        st.plotly_chart(fig_live, use_container_width=True)
-        
-        # Display Current Values
-        cols = st.columns(len(default_tickers_list))
-        for i, ticker in enumerate(default_tickers_list):
-            if ticker in live_data.columns:
-                last_price = live_data[ticker].iloc[-1]
-                prev_price = live_data[ticker].iloc[-2]
-                delta = (last_price - prev_price) / prev_price * 100
-                cols[i].metric(ticker, f"${last_price:.2f}", f"{delta:.2f}%")
-    
-    st.markdown("---")
-
     st.sidebar.header("Investment Universe")
-    tickers_input = st.sidebar.text_input("Tickers (comma separated)", key="tickers_input")
-    clean_tickers_input = tickers_input.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
-    tickers = [x.strip().upper() for x in clean_tickers_input.split(',') if x.strip() != '']
-    
-    period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
+    tickers_input_raw = st.sidebar.text_input("Tickers (comma separated)", key="tickers_input")
+    clean_input = tickers_input_raw.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
+    tickers = [x.strip().upper() for x in clean_input.split(',') if x.strip() != '']
 
+    period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y", "max"], index=2)
+    
     if len(tickers) < 3:
         st.error("The project requires at least 3 assets for diversification.")
         return
@@ -152,6 +116,70 @@ def run_quant_b():
     
     st.sidebar.markdown("---")
     st.sidebar.info(f"**Effective Weights:** {np.round(weights*100, 1)}%")
+    
+    st.markdown("### Live Market Monitor (24h)")
+    
+    col_refresh, col_time = st.columns([1, 3])
+    with col_refresh:
+        auto_refresh = st.checkbox("Auto-refresh (5 min)", value=True)
+    
+    with col_time:
+        now = datetime.now().strftime("%d %B %Y - %H:%M:%S")
+        st.markdown(f"<span class='live-badge'>Last Update: {now}</span>", unsafe_allow_html=True)
+
+    with st.spinner("Fetching live data..."):
+        live_data = get_data(default_tickers_list, period="5d", interval="5m")
+    
+    if live_data is not None and not live_data.empty:
+        # Normalize to 100 for comparison
+        normalized_live = (live_data / live_data.iloc[0]) * 100
+        
+        live_portfolio_series = normalized_live.dot(weights)
+        
+        # Plot Intraday
+        fig_live = go.Figure()
+        
+        # 1. Plot Individual Assets (Thin/Dotted)
+        for col in available_tickers:
+            if col in normalized_live.columns:
+                fig_live.add_trace(go.Scatter(
+                    x=normalized_live.index, 
+                    y=normalized_live[col], 
+                    name=col, 
+                    line=dict(width=1, dash='dot'), 
+                    opacity=0.6
+                ))
+        
+        # 2. Plot Portfolio (Bold/Blue)
+        fig_live.add_trace(go.Scatter(
+            x=live_portfolio_series.index, 
+            y=live_portfolio_series, 
+            name='PORTFOLIO', 
+            line=dict(color='blue', width=3)
+        ))
+
+        fig_live.update_layout(
+            title="Intraday Trends (Last 24h - 5m interval)", 
+            height=350, 
+            margin=dict(l=0, r=0, t=30, b=0),
+            template="plotly_white",
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig_live, use_container_width=True)
+        
+        # Display Current Values
+        cols = st.columns(len(available_tickers))
+        for i, ticker in enumerate(available_tickers):
+            if ticker in live_data.columns:
+                last_price = live_data[ticker].iloc[-1]
+                prev_price = live_data[ticker].iloc[-2] if len(live_data) > 1 else last_price
+                delta = (last_price - prev_price) / prev_price * 100
+                
+                # Handle column overflow
+                if i < 4:
+                    cols[i].metric(ticker, f"${last_price:.2f}", f"{delta:.2f}%")
+    
+    st.markdown("---")
 
     # Portfolio calculations metrics
     # Daily returns of assets
@@ -172,7 +200,7 @@ def run_quant_b():
     # Dashboard display
     
     #  Performance Chart (Line Chart)
-    st.subheader("Assets vs Portfolio Comparison (Base 100)")
+    st.subheader("Assets vs Portfolio Comparison")
     
     fig_perf = go.Figure()
     # Plot assets in gray/thin
@@ -204,13 +232,13 @@ def run_quant_b():
     c1, c2 = st.columns([1, 1])
     
     with c1:
-        st.subheader("🔗 Correlation Matrix")
+        st.subheader(" Correlation Matrix")
         corr_matrix = returns_df.corr()
         fig_corr = px.imshow(corr_matrix, text_auto=True, color_continuous_scale='RdBu_r', zmin=-1, zmax=1)
         st.plotly_chart(fig_corr, use_container_width=True)
         
     with c2:
-        st.subheader("🛡️ Diversification Effect")
+        st.subheader(" Diversification Effect")
         # Calculation: Weighted average of individual volatilities vs Actual portfolio volatility
         
         asset_vols = returns_df.std() * np.sqrt(252)
@@ -223,7 +251,7 @@ def run_quant_b():
         st.write(f"Weighted Avg Volatility: **{weighted_avg_vol*100:.2f}%**")
         st.write(f"Actual Portfolio Volatility: **{actual_vol*100:.2f}%**")
         
-        st.success(f"📉 Diversification Gain: **-{div_pct:.2f}%** risk eliminated due to imperfect correlations.")
+        st.success(f" Diversification Gain: **-{div_pct:.2f}%** risk eliminated due to imperfect correlations.")
         
         # Risk/Return Chart (Scatter Plot)
         # Create a small DataFrame for the plot
