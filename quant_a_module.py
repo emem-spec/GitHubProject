@@ -21,7 +21,8 @@ from visualization.charts import (
     create_drawdown_chart,
     create_moving_averages_chart,
     create_rsi_chart,
-    create_returns_distribution
+    create_returns_distribution,
+    create_rolling_sharpe_chart
 )
 
 # Configuration du logging
@@ -268,24 +269,35 @@ def run_quant_a():
     delta_val = final_val - initial_capital
     c5.metric("Portfolio Value", f"€{final_val:,.2f}", f"{delta_val:+.2f} €")
 
-    # ==========================================
+   # ==========================================
     # 6. ADDITIONAL ANALYSIS
     # ==========================================
     if show_indicators:
         st.subheader("📉 Additional Analysis")
-        tab1, tab2, tab3 = st.tabs(["Drawdown", "Returns Distribution", "Technical Indicators"])
+        # Ajout de l'onglet "Risk Analysis"
+        tab1, tab2, tab3, tab4 = st.tabs(["Drawdown", "Risk Analysis", "Returns Dist.", "Technical Ind."])
         
         with tab1:
             st.plotly_chart(create_drawdown_chart(results), use_container_width=True)
+            
         with tab2:
-            st.plotly_chart(create_returns_distribution(strategy_returns), use_container_width=True)
+            st.markdown("**Rolling Sharpe Ratio (6-Month Window)**")
+            # On utilise les rendements de la stratégie calculés plus haut
+            if len(strategy_returns) > 126: # Vérifier qu'on a assez de données
+                st.plotly_chart(create_rolling_sharpe_chart(strategy_returns, window=126), use_container_width=True)
+            else:
+                st.info("⚠️ Not enough data to calculate 6-month Rolling Sharpe Ratio (Need > 126 days).")
+                
         with tab3:
+            st.plotly_chart(create_returns_distribution(strategy_returns), use_container_width=True)
+            
+        with tab4:
             if strategy_name == "Momentum":
                 st.plotly_chart(create_moving_averages_chart(results), use_container_width=True)
             elif strategy_name == "RSI":
                 st.plotly_chart(create_rsi_chart(results), use_container_width=True)
             else:
-                st.info("No technical indicators for Buy & Hold strategy")
+                st.info("No technical indicators specific to Buy & Hold strategy")
 
     # ==========================================
     # 7. RAW DATA & TRADES
