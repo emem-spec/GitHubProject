@@ -30,10 +30,15 @@ DEFAULT_ASSETS = {
 REFRESH_INTERVAL = 300  # 5 minutes en secondes
 LOOKBACK_PERIODS = {
     "1d": "1 Jour",
-    "5d": "5 Jours", 
+    "5d": "5 Jours",
     "1mo": "1 Mois",
     "3mo": "3 Mois",
-    "1y": "1 An"
+    "6mo": "6 Mois",  
+    "1y": "1 An",
+    "2y": "2 Ans",    
+    "5y": "5 Ans",     
+    "10y": "10 Ans",   
+    "max": "Max"
 }
 
 # Strategy parameters

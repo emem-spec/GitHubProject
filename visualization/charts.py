@@ -4,6 +4,7 @@ Fonctions de visualisation avec Plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
+import numpy as np
 from typing import Optional
 
 
@@ -300,4 +301,40 @@ def create_metrics_comparison_bar(metrics_dict: dict) -> go.Figure:
         template='plotly_white'
     )
     
+    return fig
+
+def create_rolling_sharpe_chart(returns: pd.Series, window: int = 126) -> go.Figure:
+    """
+    Crée un graphique du Ratio de Sharpe glissant (Rolling Sharpe)
+    Args:
+        returns: Série des rendements (Strategy Returns)
+        window: Fenêtre glissante en jours 
+    """
+    # Calcul du Sharpe glissant (Annualisé)
+    # Formule : (Moyenne / Ecart-type) * Racine(252)
+    rolling_sharpe = returns.rolling(window).mean() / returns.rolling(window).std() * np.sqrt(252)
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=rolling_sharpe.index,
+        y=rolling_sharpe,
+        name=f'Rolling Sharpe ({window}d)',
+        line=dict(color='#9467bd', width=2)
+    ))
+    
+    # Ajouter une ligne à 0 (seuil de rentabilité vs sans risque)
+    fig.add_hline(y=0, line_dash="dot", line_color="gray")
+    
+    # Ajouter une ligne à 1 (bon seuil)
+    fig.add_hline(y=1, line_dash="dot", line_color="green", opacity=0.5)
+
+    fig.update_layout(
+        title=f'Rolling Sharpe Ratio (Window: {window} days)',
+        xaxis_title='Date',
+        yaxis_title='Sharpe Ratio',
+        hovermode='x unified',
+        height=350,
+        template='plotly_white'
+    )
     return fig

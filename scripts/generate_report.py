@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from datetime import datetime
 from data.fetcher import DataFetcher
-from analysis.metrics import generate_performance_summary
+from utils.metrics import generate_performance_summary
 from config.settings import DEFAULT_ASSETS, REPORTS_DIR
 import logging
 
