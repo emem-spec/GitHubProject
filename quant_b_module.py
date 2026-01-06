@@ -242,14 +242,14 @@ def run_quant_b():
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Return", f"{port_metrics['Total Return']*100:.2f} %")
     c2.metric("Volatility", f"{port_metrics['Volatility']*100:.2f} %")
-    c3.metric("Max Drawdown", f"{port_metrics['Max Drawdown']*100:.2f} %")
-    c4.metric("Calmar Ratio", f"{port_metrics['Calmar Ratio']:.2f} ")
+    c3.metric("Max Drawdown", f"{port_metrics['Max Drawdown']*100:.2f} %",help="Maximum observed loss from a peak to a trough")
+    c4.metric("Calmar Ratio", f"{port_metrics['Calmar Ratio']:.2f} ",help="Annual Return / Abs(Max Drawdown)")
 
     c5, c6, c7, c8 = st.columns(4)
     c5.metric("Sharpe Ratio", f"{port_metrics['Sharpe Ratio']:.2f}", help="Reward per unit of total risk")
     c6.metric("Sortino Ratio", f"{port_metrics['Sortino Ratio']:.2f}", help="Reward per unit of downside risk")
-    c7.metric("VaR (95%)", f"{port_metrics['VaR (95%)']*100:.2f} %", help="Value at Risk (Daily): Max expected loss with 95% confidence")
-    c8.metric("CVaR (95%)", f"{port_metrics['CVaR (95%)']*100:.2f} %", help="Conditional VaR: Expected loss if VaR is breached")
+    c7.metric("VaR (95%)", f"{port_metrics['VaR (95%)']*100:.2f} %")
+    c8.metric("CVaR (95%)", f"{port_metrics['CVaR (95%)']*100:.2f} %")
 
     # C. Diversification Effect (Quant B Specific)
     st.markdown("---")
