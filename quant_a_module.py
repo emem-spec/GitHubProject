@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def run_quant_a():
     """
     Fonction principale du module Quant A.
-    Tout le code d'affichage (y compris la sidebar) est encapsulé ici.
+    Tout le code (UI, Logique, Sidebar) est encapsulé ici.
     """
     
     # Injection CSS (Scope local)
@@ -50,9 +50,8 @@ def run_quant_a():
     st.markdown("---")
 
     # ==========================================
-    # 1. SIDEBAR CONFIGURATION
+    # 1. SIDEBAR CONFIGURATION (Tout est indenté)
     # ==========================================
-    # ATTENTION : Tout ce bloc est indenté pour être DANS la fonction
     st.sidebar.header("⚙️ Configuration (Quant A)")
 
     # Sélection de l'actif
@@ -60,16 +59,22 @@ def run_quant_a():
         "Asset",
         options=list(DEFAULT_ASSETS.keys()),
         index=0,
-        key="qa_asset_select" # Clé unique indispensable
+        key="qa_asset_select"
     )
     ticker = DEFAULT_ASSETS[asset_name]
 
-    # Période
+    # Période (Mise à jour pour accepter les nouvelles clés de settings.py)
+    # On cherche l'index par défaut (1y ou 1mo)
+    default_period_index = 2
+    period_keys = list(LOOKBACK_PERIODS.keys())
+    if "1y" in period_keys:
+        default_period_index = period_keys.index("1y")
+    
     period = st.sidebar.selectbox(
         "Period",
-        options=list(LOOKBACK_PERIODS.keys()),
-        format_func=lambda x: LOOKBACK_PERIODS[x],
-        index=2, # Default: 1 mois
+        options=period_keys,
+        format_func=lambda x: LOOKBACK_PERIODS.get(x, x),
+        index=default_period_index,
         key="qa_period_select"
     )
 
@@ -78,12 +83,21 @@ def run_quant_a():
         "5 minutes": "5m",
         "15 minutes": "15m",
         "1 heure": "1h",
-        "1 jour": "1d"
+        "1 jour": "1d",
+        "1 semaine": "1wk"
     }
+    # Logique pour adapter l'intervalle si la période est longue (Yahoo bloque les données intraday sur > 60j)
+    default_interval = 3 # 1 jour
+    if period in ["2y", "5y", "10y", "max"]:
+        st.sidebar.info("ℹ️ Long period selected: Interval set to Daily/Weekly")
+        # Filtrer pour ne garder que jour/semaine
+        interval_options = {"1 jour": "1d", "1 semaine": "1wk"}
+        default_interval = 0
+
     interval_label = st.sidebar.selectbox(
         "Interval",
         options=list(interval_options.keys()),
-        index=3, # Default: 1 jour
+        index=default_interval,
         key="qa_interval_select"
     )
     interval = interval_options[interval_label]
@@ -122,14 +136,14 @@ def run_quant_a():
         short_window = st.sidebar.slider(
             "Short MA Window",
             min_value=5,
-            max_value=50,
+            max_value=100, # Augmenté pour les longues périodes
             value=short_window,
             key="qa_short_window"
         )
         long_window = st.sidebar.slider(
             "Long MA Window",
             min_value=20,
-            max_value=200,
+            max_value=365, # Augmenté pour supporter 1 an de moyenne mobile
             value=long_window,
             key="qa_long_window"
         )
@@ -159,7 +173,7 @@ def run_quant_a():
 
     st.sidebar.markdown("---")
 
-    # Options d'affichage (C'est ce bloc qui posait problème avant indentation)
+    # Options d'affichage
     st.sidebar.subheader("📊 Display Options")
     show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_signals")
     show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_indicators")
@@ -170,10 +184,13 @@ def run_quant_a():
         st.cache_data.clear()
         st.rerun()
 
+    # Petit footer dans la sidebar (doit aussi être indenté !)
+    st.sidebar.markdown("---")
+    st.sidebar.caption(f"Last update: {datetime.now().strftime('%H:%M:%S')}")
+
     # ==========================================
     # 2. DATA LOADING
     # ==========================================
-    
     @st.cache_data(ttl=REFRESH_INTERVAL)
     def load_data_cached(ticker_symbol, period_val, interval_val):
         try:
@@ -183,31 +200,33 @@ def run_quant_a():
             logger.error(f"Error loading data: {e}")
             return None
 
-    with st.spinner(f'📥 Loading data for {asset_name}...'):
+    with st.spinner(f'📥 Loading data for {asset_name} ({period})...'):
         df = load_data_cached(ticker, period, interval)
 
     if df is None or df.empty:
-        st.error(f"❌ Unable to load data for {asset_name}. Please check the ticker symbol.")
+        st.error(f"❌ Unable to load data for {asset_name}. Please check the ticker symbol or try a shorter period.")
         return
 
     # ==========================================
     # 3. MARKET METRICS
     # ==========================================
     st.subheader("💰 Current Market Data")
-
     col1, col2, col3, col4, col5 = st.columns(5)
 
     current_price = df['Close'].iloc[-1]
     prev_price = df['Close'].iloc[0]
     price_change = current_price - prev_price
     price_change_pct = (price_change / prev_price) * 100
-    volatility_val = df['Close'].pct_change().std() * 100
+    
+    # Gestion sécurisée de la volatilité
+    returns = df['Close'].pct_change().dropna()
+    volatility_val = returns.std() * 100 if not returns.empty else 0
 
     col1.metric("💵 Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
     col2.metric("📈 High", f"€{df['High'].max():.2f}")
     col3.metric("📉 Low", f"€{df['Low'].min():.2f}")
     col4.metric("📊 Volume", f"{df['Volume'].iloc[-1]:,.0f}")
-    col5.metric("⚡ Volatility", f"{volatility_val:.2f}%")
+    col5.metric("⚡ Volatility (Period)", f"{volatility_val:.2f}%")
 
     st.markdown("---")
 
@@ -289,6 +308,7 @@ def run_quant_a():
             else:
                 st.info("No trades executed.")
 
+    # Logique d'auto-refresh (DOIT ETRE INDENTEE AUSSI)
     if auto_refresh:
         time.sleep(REFRESH_INTERVAL)
         st.rerun()
