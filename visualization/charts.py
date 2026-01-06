@@ -4,6 +4,7 @@ Fonctions de visualisation avec Plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
+import numpy as np
 from typing import Optional
 
 
