@@ -1,6 +1,6 @@
 # Configuration
 PROJECT_DIR="/home/ubuntu/GitHubProject"  
-DATE=$(date +"%Y-%m-%d")
+DATE=$(date +"%Y%m%d")
 REPORT_DIR="$PROJECT_DIR/reports"
 LOG_FILE="$REPORT_DIR/daily_report_$DATE.txt"
 
