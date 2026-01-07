@@ -29,15 +29,15 @@ DEFAULT_ASSETS = {
 # Data settings
 REFRESH_INTERVAL = 300  # 5 minutes in secondes
 LOOKBACK_PERIODS = {
-    "1d": "1 Jour",
-    "5d": "5 Jours",
-    "1mo": "1 Mois",
-    "3mo": "3 Mois",
-    "6mo": "6 Mois",  
-    "1y": "1 An",
-    "2y": "2 Ans",    
-    "5y": "5 Ans",     
-    "10y": "10 Ans",   
+    "1d": "1 Day",
+    "5d": "5 Days",
+    "1mo": "1 Month",
+    "3mo": "3 Months",
+    "6mo": "6 Months",  
+    "1y": "1 Year",
+    "2y": "2 Years",    
+    "5y": "5 Years",     
+    "10y": "10 Years",   
     "max": "Max"
 }
 
