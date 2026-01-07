@@ -23,11 +23,19 @@ def run_quant_b():
 
     #Allocation and configuration
 
-    if 'tickers_input' not in st.session_state:
-        st.session_state.tickers_input = "AAPL, MSFT, GOOGL, AMZN"
+   if 'tickers_input' not in st.session_state:
+        saved_config = load_config()
+        # Si le fichier existe, on prend les tickers, sinon on met la valeur par défaut
+        st.session_state.tickers_input = saved_config.get("tickers", "AAPL, MSFT, GOOGL, AMZN")
 
     st.sidebar.header("I) Investment Universe")
-    tickers_input_raw = st.sidebar.text_input("Tickers (comma separated)", key="tickers_input")
+    
+    tickers_input_raw = st.sidebar.text_input(
+        "Tickers (comma separated)", 
+        key="tickers_input",
+        on_change=save_config 
+    )
+    
     clean_input = tickers_input_raw.replace('[', '').replace(']', '').replace('"', '').replace("'", "")
     tickers = [x.strip().upper() for x in clean_input.split(',') if x.strip() != '']
     
