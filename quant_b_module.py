@@ -14,26 +14,23 @@ from portfolio_analytics import calculate_metrics, calculate_portfolio_performan
 CONFIG_FILE = "quant_b_config.json"
 
 def load_config():
-    """Charge la configuration depuis le disque"""
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Erreur chargement config: {e}")
+            logger.error(f"Error in the loading of tickers: {e}")
             return {}
     return {}
 
 def save_config():
-    """Sauvegarde les tickers actuels sur le disque"""
-    # On récupère la valeur actuelle dans le session_state
     if 'tickers_input' in st.session_state:
         config = {"tickers": st.session_state.tickers_input}
         try:
             with open(CONFIG_FILE, "w") as f:
                 json.dump(config, f)
         except Exception as e:
-            logger.error(f"Erreur sauvegarde config: {e}")
+            logger.error(f"Error in the saving of tickers :{e}")
 
 def run_quant_b():
     # Custom CSS
