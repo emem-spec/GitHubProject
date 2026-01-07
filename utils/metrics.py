@@ -1,5 +1,5 @@
 """
-Fonctions de calcul des métriques de performance
+Functions to calculate different metrics
 """
 import numpy as np
 import pandas as pd
