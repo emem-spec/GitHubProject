@@ -25,7 +25,7 @@ from visualization.charts import (
     create_rolling_sharpe_chart
 )
 
-# Configuration du logging
+# Configuration logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def run_quant_a():
     Tout le code (UI, Logique, Sidebar) est encapsulé ici.
     """
     
-    # Injection CSS (Scope local)
+    # Injection CSS (local scope)
     st.markdown("""
     <style>
     .metric-card {
@@ -51,11 +51,11 @@ def run_quant_a():
     st.markdown("---")
 
     # ==========================================
-    # 1. SIDEBAR CONFIGURATION (Tout est indenté)
+    # 1. SIDEBAR CONFIGURATION 
     # ==========================================
     st.sidebar.header("⚙️ Configuration (Quant A)")
 
-    # Sélection de l'actif
+    # Asset selection
     asset_name = st.sidebar.selectbox(
         "Asset",
         options=list(DEFAULT_ASSETS.keys()),
@@ -64,8 +64,8 @@ def run_quant_a():
     )
     ticker = DEFAULT_ASSETS[asset_name]
 
-    # Période (Mise à jour pour accepter les nouvelles clés de settings.py)
-    # On cherche l'index par défaut (1y ou 1mo)
+    # Period
+    # We look for default index 
     default_period_index = 2
     period_keys = list(LOOKBACK_PERIODS.keys())
     if "1y" in period_keys:
@@ -79,20 +79,20 @@ def run_quant_a():
         key="qa_period_select"
     )
 
-    # Intervalle
+    # Interval
     interval_options = {
         "5 minutes": "5m",
         "15 minutes": "15m",
-        "1 heure": "1h",
-        "1 jour": "1d",
-        "1 semaine": "1wk"
+        "1 hour": "1h",
+        "1 day": "1d",
+        "1 week": "1wk"
     }
-    # Logique pour adapter l'intervalle si la période est longue (Yahoo bloque les données intraday sur > 60j)
-    default_interval = 3 # 1 jour
+    # Logic to adjust the interval if the period is long (Yahoo blocks intraday data for > 60d)
+    default_interval = 3 # 1 day
     if period in ["2y", "5y", "10y", "max"]:
         st.sidebar.info("ℹ️ Long period selected: Interval set to Daily/Weekly")
-        # Filtrer pour ne garder que jour/semaine
-        interval_options = {"1 jour": "1d", "1 semaine": "1wk"}
+        # Filter to keep day/week
+        interval_options = {"1 day": "1d", "1 week": "1wk"}
         default_interval = 0
 
     interval_label = st.sidebar.selectbox(
@@ -105,7 +105,7 @@ def run_quant_a():
 
     st.sidebar.markdown("---")
 
-    # Sélection de la stratégie
+    # Selection of strategy
     st.sidebar.subheader("📈 Strategy Selection")
     strategy_name = st.sidebar.selectbox(
         "Trading Strategy",
@@ -113,7 +113,7 @@ def run_quant_a():
         key="qa_strategy_select"
     )
 
-    # Capital initial
+    # initial capital
     initial_capital = st.sidebar.number_input(
         "Initial Capital (€)",
         min_value=1000,
@@ -123,10 +123,10 @@ def run_quant_a():
         key="qa_capital_input"
     )
 
-    # Paramètres de stratégie
+    # Parameters of the strategy
     st.sidebar.subheader("🔧 Strategy Parameters")
 
-    # Valeurs par défaut
+    # Default values
     short_window = STRATEGY_DEFAULTS["momentum"]["short_window"]
     long_window = STRATEGY_DEFAULTS["momentum"]["long_window"]
     rsi_period = STRATEGY_DEFAULTS["rsi"]["period"]
@@ -137,14 +137,14 @@ def run_quant_a():
         short_window = st.sidebar.slider(
             "Short MA Window",
             min_value=5,
-            max_value=100, # Augmenté pour les longues périodes
+            max_value=100, # higher for longer periods
             value=short_window,
             key="qa_short_window"
         )
         long_window = st.sidebar.slider(
             "Long MA Window",
             min_value=20,
-            max_value=365, # Augmenté pour supporter 1 an de moyenne mobile
+            max_value=365, 
             value=long_window,
             key="qa_long_window"
         )
@@ -174,18 +174,18 @@ def run_quant_a():
 
     st.sidebar.markdown("---")
 
-    # Options d'affichage
+    # Display options
     st.sidebar.subheader("📊 Display Options")
     show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_signals")
     show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_indicators")
     auto_refresh = st.sidebar.checkbox("Auto-refresh (5 min)", value=False, key="qa_auto_refresh")
 
-    # Bouton de rafraîchissement
+    # Refresh button
     if st.sidebar.button("🔄 Refresh Data", key="qa_refresh_btn"):
         st.cache_data.clear()
         st.rerun()
 
-    # Petit footer dans la sidebar (doit aussi être indenté !)
+    
     st.sidebar.markdown("---")
     st.sidebar.caption(f"Last update: {datetime.now().strftime('%H:%M:%S')}")
 
@@ -219,7 +219,7 @@ def run_quant_a():
     price_change = current_price - prev_price
     price_change_pct = (price_change / prev_price) * 100
     
-    # Gestion sécurisée de la volatilité
+   
     returns = df['Close'].pct_change().dropna()
     volatility_val = returns.std() * 100 if not returns.empty else 0
 
@@ -274,7 +274,7 @@ def run_quant_a():
     # ==========================================
     if show_indicators:
         st.subheader("📉 Additional Analysis")
-        # Ajout de l'onglet "Risk Analysis"
+        
         tab1, tab2, tab3, tab4 = st.tabs(["Drawdown", "Risk Analysis", "Returns Dist.", "Technical Ind."])
         
         with tab1:
@@ -282,8 +282,8 @@ def run_quant_a():
             
         with tab2:
             st.markdown("**Rolling Sharpe Ratio (6-Month Window)**")
-            # On utilise les rendements de la stratégie calculés plus haut
-            if len(strategy_returns) > 126: # Vérifier qu'on a assez de données
+            
+            if len(strategy_returns) > 126: # check if we have enough data
                 st.plotly_chart(create_rolling_sharpe_chart(strategy_returns, window=126), use_container_width=True)
             else:
                 st.info("⚠️ Not enough data to calculate 6-month Rolling Sharpe Ratio (Need > 126 days).")
@@ -320,7 +320,7 @@ def run_quant_a():
             else:
                 st.info("No trades executed.")
 
-    # Logique d'auto-refresh (DOIT ETRE INDENTEE AUSSI)
+   
     if auto_refresh:
         time.sleep(REFRESH_INTERVAL)
         st.rerun()
