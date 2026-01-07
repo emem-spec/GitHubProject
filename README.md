@@ -22,7 +22,7 @@ The project includes automated daily reporting via Linux cron jobs and is design
 
 ### Module Quant B: Portfolio Management
 * **Multi-Asset Simulation:** Construct portfolios with custom weights.
-* **Risk Analysis:** Value at Risk (VaR), Conditional VaR (CVaR), and Volatility analysis.
+* **Risk Analysis:** Value at Risk (VaR), Conditional VaR (CVaR), Volatility analysis and other ratios
 * **Diversification:** Correlation matrix heatmap and diversification benefit calculation.
 * **Intraday Monitor:** Live tracking of portfolio performance over the last 24 hours.
 
