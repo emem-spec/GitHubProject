@@ -1,5 +1,5 @@
 """
-Fonctions de visualisation avec Plotly
+Visualization Functions
 """
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -12,19 +12,19 @@ def create_price_strategy_chart(data: pd.DataFrame,
                                 asset_name: str = "Asset",
                                 show_signals: bool = False) -> go.Figure:
     """
-    Crée un graphique combinant prix et valeur du portfolio
+    Make a graph combining price and portfolio value
     
     Args:
-        data: DataFrame avec colonnes Close et Portfolio_Value
-        asset_name: Nom de l'actif
-        show_signals: Afficher les signaux d'achat/vente
+        data: DataFrame with Close et Portfolio_Value
+        asset_name: Name asset
+        show_signals: Show buy/sell signals
     
     Returns:
         Figure Plotly
     """
     fig = go.Figure()
     
-    # Prix de l'actif (axe Y gauche)
+    # Asset price
     fig.add_trace(go.Scatter(
         x=data.index,
         y=data['Close'],
@@ -33,7 +33,7 @@ def create_price_strategy_chart(data: pd.DataFrame,
         yaxis='y1'
     ))
     
-    # Valeur du portfolio (axe Y droit)
+    # Portfolio value
     if 'Portfolio_Value' in data.columns:
         fig.add_trace(go.Scatter(
             x=data.index,
@@ -43,7 +43,7 @@ def create_price_strategy_chart(data: pd.DataFrame,
             yaxis='y2'
         ))
     
-    # Buy & Hold pour comparaison
+    # Buy & Hold for comparaison
     if 'Buy_Hold_Value' in data.columns:
         fig.add_trace(go.Scatter(
             x=data.index,
@@ -53,7 +53,7 @@ def create_price_strategy_chart(data: pd.DataFrame,
             yaxis='y2'
         ))
     
-    # Signaux d'achat/vente
+    # buy/sell signals
     if show_signals and 'Position' in data.columns:
         # Buy signals
         buy_signals = data[data['Position'].diff() == 1]
@@ -79,7 +79,7 @@ def create_price_strategy_chart(data: pd.DataFrame,
                 yaxis='y1'
             ))
     
-    # Layout avec double axe Y
+    # Layout with double axis Y
     fig.update_layout(
         title=f'{asset_name} - Price vs Strategy Performance',
         xaxis_title='Date',
@@ -106,10 +106,10 @@ def create_price_strategy_chart(data: pd.DataFrame,
 
 def create_drawdown_chart(data: pd.DataFrame) -> go.Figure:
     """
-    Crée un graphique du drawdown
+    Make a drawdown graph
     
     Args:
-        data: DataFrame avec colonne Drawdown
+        data: DataFrame with Drawdown
     
     Returns:
         Figure Plotly
@@ -141,10 +141,10 @@ def create_drawdown_chart(data: pd.DataFrame) -> go.Figure:
 
 def create_returns_distribution(returns: pd.Series) -> go.Figure:
     """
-    Crée un histogramme de la distribution des returns
+    Histogramme distribution returns
     
     Args:
-        returns: Series de returns
+        returns: Series of returns
     
     Returns:
         Figure Plotly
@@ -175,7 +175,7 @@ def create_returns_distribution(returns: pd.Series) -> go.Figure:
 
 def create_moving_averages_chart(data: pd.DataFrame) -> go.Figure:
     """
-    Crée un graphique avec les moyennes mobiles
+    Graph Moving Average
     
     Args:
         data: DataFrame avec colonnes Close, SMA_Short, SMA_Long
@@ -185,7 +185,7 @@ def create_moving_averages_chart(data: pd.DataFrame) -> go.Figure:
     """
     fig = go.Figure()
     
-    # Prix
+    # Price
     fig.add_trace(go.Scatter(
         x=data.index,
         y=data['Close'],
@@ -193,7 +193,7 @@ def create_moving_averages_chart(data: pd.DataFrame) -> go.Figure:
         line=dict(color='black', width=2)
     ))
     
-    # SMA courte
+    # SMA short
     if 'SMA_Short' in data.columns:
         fig.add_trace(go.Scatter(
             x=data.index,
@@ -202,7 +202,7 @@ def create_moving_averages_chart(data: pd.DataFrame) -> go.Figure:
             line=dict(color='blue', width=1.5)
         ))
     
-    # SMA longue
+    # SMA long
     if 'SMA_Long' in data.columns:
         fig.add_trace(go.Scatter(
             x=data.index,
@@ -225,10 +225,10 @@ def create_moving_averages_chart(data: pd.DataFrame) -> go.Figure:
 
 def create_rsi_chart(data: pd.DataFrame) -> go.Figure:
     """
-    Crée un graphique du RSI
+    Graph RSI
     
     Args:
-        data: DataFrame avec colonne RSI
+        data: DataFrame with RSI
     
     Returns:
         Figure Plotly
@@ -269,7 +269,7 @@ def create_rsi_chart(data: pd.DataFrame) -> go.Figure:
 
 def create_metrics_comparison_bar(metrics_dict: dict) -> go.Figure:
     """
-    Crée un graphique en barres comparant plusieurs métriques
+    Metrics comparison barchart
     
     Args:
         metrics_dict: Dict avec nom de stratégie -> métriques
@@ -279,7 +279,7 @@ def create_metrics_comparison_bar(metrics_dict: dict) -> go.Figure:
     """
     strategies = list(metrics_dict.keys())
     
-    # Extraire les métriques communes
+    # Extract metrics
     metric_names = ['Total Return (%)', 'Sharpe Ratio', 'Max Drawdown (%)']
     
     fig = go.Figure()
@@ -305,13 +305,13 @@ def create_metrics_comparison_bar(metrics_dict: dict) -> go.Figure:
 
 def create_rolling_sharpe_chart(returns: pd.Series, window: int = 126) -> go.Figure:
     """
-    Crée un graphique du Ratio de Sharpe glissant (Rolling Sharpe)
+    Rolling Sharpe graph
     Args:
-        returns: Série des rendements (Strategy Returns)
-        window: Fenêtre glissante en jours 
+        returns: Strategy Returns
+        window: Rolling window 
     """
-    # Calcul du Sharpe glissant (Annualisé)
-    # Formule : (Moyenne / Ecart-type) * Racine(252)
+    # Calculate annualized rolling Sharpe
+    # Formule : (average / std) * sqrt(252)
     rolling_sharpe = returns.rolling(window).mean() / returns.rolling(window).std() * np.sqrt(252)
     
     fig = go.Figure()
@@ -323,10 +323,10 @@ def create_rolling_sharpe_chart(returns: pd.Series, window: int = 126) -> go.Fig
         line=dict(color='#9467bd', width=2)
     ))
     
-    # Ajouter une ligne à 0 (seuil de rentabilité vs sans risque)
+    # add a line of 0 (break-even vs risk-free)
     fig.add_hline(y=0, line_dash="dot", line_color="gray")
     
-    # Ajouter une ligne à 1 (bon seuil)
+    # add a line of 1 (good threshold)
     fig.add_hline(y=1, line_dash="dot", line_color="green", opacity=0.5)
 
     fig.update_layout(
