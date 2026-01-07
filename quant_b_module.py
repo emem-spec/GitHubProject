@@ -46,7 +46,6 @@ def run_quant_b():
     #Allocation and configuration
     if 'tickers_input' not in st.session_state:
         saved_config = load_config()
-        # Si le fichier existe, on prend les tickers, sinon on met la valeur par défaut
         st.session_state.tickers_input = saved_config.get("tickers", "AAPL, MSFT, GOOGL, AMZN")
 
     st.sidebar.header("I) Investment Universe")
