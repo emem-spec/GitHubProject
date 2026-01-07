@@ -59,5 +59,4 @@ The project includes automated daily reporting via Linux cron jobs and is design
 ├── quant_a_module.py         # Main logic for Module A
 ├── quant_b_module.py         # Main logic for Module B
 ├── requirements.txt          # Python dependencies
-├── update_eurusd_live.py     # Script for live currency updates
 └── README.md                 # Project documentation
