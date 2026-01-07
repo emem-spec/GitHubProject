@@ -1,5 +1,5 @@
 """
-Moteur de backtesting pour les stratégies
+Backtesting engine for trading strategies
 """
 import pandas as pd
 import numpy as np
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class Backtester:
     """
-    Moteur de backtesting unifié pour toutes les stratégies
+    Unified backtesting engine for all strategies
     """
     
     def __init__(self, data: pd.DataFrame, initial_capital: float = 10000):
