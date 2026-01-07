@@ -1,5 +1,5 @@
 # Configuration
-PROJECT_DIR="/home/ubuntu/project"  
+PROJECT_DIR="/home/ubuntu/GitHubProject"  
 DATE=$(date +"%Y-%m-%d")
 REPORT_DIR="$PROJECT_DIR/reports"
 LOG_FILE="$REPORT_DIR/daily_report_$DATE.txt"
@@ -20,7 +20,7 @@ cd "$PROJECT_DIR"
 source venv/bin/activate
 
 # Execute Python script
-python3 scripts/generate_report.py ENGI.PA ENGIE >> "$LOG_FILE" 2>&1
+python3 scripts/generate_report.py >> "$LOG_FILE" 2>&1
 
 # Execution status
 if [ $? -eq 0 ]; then
