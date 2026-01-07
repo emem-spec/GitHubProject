@@ -1,13 +1,13 @@
 #!/bin/bash
-# Script pour maintenir Streamlit actif 24/7
+# Script for Streamlit active 24/7
 
-PROJECT_DIR="/home/ubuntu/project"  # Adapter selon votre chemin
+PROJECT_DIR="/home/ubuntu/GitHubProject"  
 LOG_FILE="$PROJECT_DIR/logs/streamlit.log"
 PID_FILE="$PROJECT_DIR/streamlit.pid"
 
 cd "$PROJECT_DIR"
 
-# Fonction pour vérifier si Streamlit tourne
+# Function to check Streamlit is running
 is_running() {
     if [ -f "$PID_FILE" ]; then
         PID=$(cat "$PID_FILE")
@@ -18,17 +18,17 @@ is_running() {
     return 1  # Process is not running
 }
 
-# Fonction pour démarrer Streamlit
+# Fonction to start Streamlit
 start_streamlit() {
     echo "Starting Streamlit at $(date)" >> "$LOG_FILE"
     
-    # Activer l'environnement virtuel
+    # Activate virtual environment
     source venv/bin/activate
     
-    # Tuer les anciennes instances
+    # kill other instances
     pkill -f "streamlit run app.py" 2>/dev/null
     
-    # Démarrer Streamlit en arrière-plan
+    # start Streamlit in background
     nohup streamlit run app.py \
         --server.port 8501 \
         --server.address 0.0.0.0 \
@@ -36,13 +36,13 @@ start_streamlit() {
         --server.runOnSave true \
         >> "$LOG_FILE" 2>&1 &
     
-    # Sauvegarder le PID
+    # Save PID
     echo $! > "$PID_FILE"
     
     echo "Streamlit started with PID $(cat $PID_FILE)" >> "$LOG_FILE"
 }
 
-# Fonction pour arrêter Streamlit
+# Function to stop Streamlit
 stop_streamlit() {
     echo "Stopping Streamlit at $(date)" >> "$LOG_FILE"
     
@@ -56,7 +56,7 @@ stop_streamlit() {
     echo "Streamlit stopped" >> "$LOG_FILE"
 }
 
-# Fonction pour redémarrer Streamlit
+# Function to restart Streamlit
 restart_streamlit() {
     echo "Restarting Streamlit at $(date)" >> "$LOG_FILE"
     stop_streamlit
@@ -64,7 +64,7 @@ restart_streamlit() {
     start_streamlit
 }
 
-# Parser les arguments
+# Parse arguments
 case "$1" in
     start)
         if is_running; then
@@ -87,7 +87,7 @@ case "$1" in
         fi
         ;;
     *)
-        # Par défaut, vérifier et redémarrer si nécessaire
+        
         if ! is_running; then
             echo "Streamlit not running, starting..." >> "$LOG_FILE"
             start_streamlit
