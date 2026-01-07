@@ -10,12 +10,12 @@ DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
 LOGS_DIR = BASE_DIR / "logs"
 
-# Créer les dossiers si nécessaire
+# Create directories if necessary
 DATA_DIR.mkdir(exist_ok=True)
 REPORTS_DIR.mkdir(exist_ok=True)
 LOGS_DIR.mkdir(exist_ok=True)
 
-# Assets disponibles
+# Available Assets 
 DEFAULT_ASSETS = {
     "ENGIE": "ENGI.PA",
     "EUR/USD": "EURUSD=X",
@@ -27,7 +27,7 @@ DEFAULT_ASSETS = {
 }
 
 # Data settings
-REFRESH_INTERVAL = 300  # 5 minutes en secondes
+REFRESH_INTERVAL = 300  # 5 minutes in secondes
 LOOKBACK_PERIODS = {
     "1d": "1 Jour",
     "5d": "5 Jours",
