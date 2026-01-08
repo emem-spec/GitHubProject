@@ -47,13 +47,13 @@ def run_quant_a():
     </style>
     """, unsafe_allow_html=True)
 
-    st.header("📊 Single Asset Quantitative Analysis (Quant A)")
+    st.header("Single Asset Quantitative Analysis (Quant A)")
     st.markdown("---")
 
     # ==========================================
     # 1. SIDEBAR CONFIGURATION 
     # ==========================================
-    st.sidebar.header("⚙️ Configuration (Quant A)")
+    st.sidebar.header("Configuration (Quant A)")
 
     # Asset selection
     asset_name = st.sidebar.selectbox(
@@ -90,7 +90,7 @@ def run_quant_a():
     # Logic to adjust the interval if the period is long (Yahoo blocks intraday data for > 60d)
     default_interval = 3 # 1 day
     if period in ["2y", "5y", "10y", "max"]:
-        st.sidebar.info("ℹ️ Long period selected: Interval set to Daily/Weekly")
+        st.sidebar.info("Long period selected: Interval set to Daily/Weekly")
         # Filter to keep day/week
         interval_options = {"1 day": "1d", "1 week": "1wk"}
         default_interval = 0
@@ -106,7 +106,7 @@ def run_quant_a():
     st.sidebar.markdown("---")
 
     # Selection of strategy
-    st.sidebar.subheader("📈 Strategy Selection")
+    st.sidebar.subheader("Strategy Selection")
     strategy_name = st.sidebar.selectbox(
         "Trading Strategy",
         ["Buy & Hold", "Momentum", "RSI"],
@@ -124,7 +124,7 @@ def run_quant_a():
     )
 
     # Parameters of the strategy
-    st.sidebar.subheader("🔧 Strategy Parameters")
+    st.sidebar.subheader("Strategy Parameters")
 
     # Default values
     short_window = STRATEGY_DEFAULTS["momentum"]["short_window"]
@@ -175,7 +175,7 @@ def run_quant_a():
     st.sidebar.markdown("---")
 
     # Display options
-    st.sidebar.subheader("📊 Display Options")
+    st.sidebar.subheader("Display Options")
     show_signals = st.sidebar.checkbox("Show Buy/Sell Signals", value=False, key="qa_show_signals")
     show_indicators = st.sidebar.checkbox("Show Technical Indicators", value=True, key="qa_show_indicators")
     auto_refresh = st.sidebar.checkbox("Auto-refresh (5 min)", value=False, key="qa_auto_refresh")
@@ -201,17 +201,17 @@ def run_quant_a():
             logger.error(f"Error loading data: {e}")
             return None
 
-    with st.spinner(f'📥 Loading data for {asset_name} ({period})...'):
+    with st.spinner(f'Loading data for {asset_name} ({period})...'):
         df = load_data_cached(ticker, period, interval)
 
     if df is None or df.empty:
-        st.error(f"❌ Unable to load data for {asset_name}. Please check the ticker symbol or try a shorter period.")
+        st.error(f"Unable to load data for {asset_name}. Please check the ticker symbol or try a shorter period.")
         return
 
     # ==========================================
     # 3. MARKET METRICS
     # ==========================================
-    st.subheader("💰 Current Market Data")
+    st.subheader("Current Market Data")
     col1, col2, col3, col4, col5 = st.columns(5)
 
     current_price = df['Close'].iloc[-1]
@@ -223,18 +223,18 @@ def run_quant_a():
     returns = df['Close'].pct_change().dropna()
     volatility_val = returns.std() * 100 if not returns.empty else 0
 
-    col1.metric("💵 Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
-    col2.metric("📈 High", f"€{df['High'].max():.2f}")
-    col3.metric("📉 Low", f"€{df['Low'].min():.2f}")
-    col4.metric("📊 Volume", f"{df['Volume'].iloc[-1]:,.0f}")
-    col5.metric("⚡ Volatility (Period)", f"{volatility_val:.2f}%")
+    col1.metric("Price", f"€{current_price:.2f}", f"{price_change_pct:+.2f}%")
+    col2.metric("High", f"€{df['High'].max():.2f}")
+    col3.metric("Low", f"€{df['Low'].min():.2f}")
+    col4.metric("Volume", f"{df['Volume'].iloc[-1]:,.0f}")
+    col5.metric("Volatility (Period)", f"{volatility_val:.2f}%")
 
     st.markdown("---")
 
     # ==========================================
     # 4. BACKTESTING
     # ==========================================
-    st.subheader(f"🎯 Backtesting - {strategy_name}")
+    st.subheader(f"Backtesting - {strategy_name}")
 
     if strategy_name == "Buy & Hold":
         strategy = BuyHoldStrategy(df, initial_capital)
@@ -254,7 +254,7 @@ def run_quant_a():
     # ==========================================
     # 5. PERFORMANCE METRICS
     # ==========================================
-    st.subheader("📊 Performance Metrics")
+    st.subheader("Performance Metrics")
 
     strategy_returns = results['Strategy_Returns'].dropna()
     metrics = generate_performance_summary(results['Close'], strategy_returns)
@@ -273,7 +273,7 @@ def run_quant_a():
     # 6. ADDITIONAL ANALYSIS
     # ==========================================
     if show_indicators:
-        st.subheader("📉 Additional Analysis")
+        st.subheader("Additional Analysis")
         
         tab1, tab2, tab3, tab4 = st.tabs(["Drawdown", "Risk Analysis", "Returns Dist.", "Technical Ind."])
         
@@ -286,7 +286,7 @@ def run_quant_a():
             if len(strategy_returns) > 126: # check if we have enough data
                 st.plotly_chart(create_rolling_sharpe_chart(strategy_returns, window=126), use_container_width=True)
             else:
-                st.info("⚠️ Not enough data to calculate 6-month Rolling Sharpe Ratio (Need > 126 days).")
+                st.info("Not enough data to calculate 6-month Rolling Sharpe Ratio (Need > 126 days).")
                 
         with tab3:
             st.plotly_chart(create_returns_distribution(strategy_returns), use_container_width=True)
@@ -302,7 +302,7 @@ def run_quant_a():
     # ==========================================
     # 7. RAW DATA & TRADES
     # ==========================================
-    with st.expander("📋 View Raw Data & Trade History"):
+    with st.expander("View Raw Data & Trade History"):
         col_data, col_trades = st.columns(2)
         
         with col_data:
