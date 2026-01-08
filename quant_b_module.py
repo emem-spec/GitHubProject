@@ -41,7 +41,7 @@ def run_quant_b():
     </style>
     """, unsafe_allow_html=True)
 
-    st.header("📊 Multi-Asset Portfolio Manager (Quant B)")
+    st.header(" Multi-Asset Portfolio Manager (Quant B)")
 
     #Allocation and configuration
     if 'tickers_input' not in st.session_state:
