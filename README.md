@@ -21,7 +21,7 @@ The project includes automated daily reporting via Linux cron jobs and is design
 * **Visualizations:** Interactive charts with Buy/Sell signals, Drawdown analysis, and Rolling Sharpe Ratio.
 
 ### Module Quant B: Portfolio Management
-* **Multi-Asset Simulation:** Construct portfolios with custom weights.
+* **Multi-Asset Simulation:** Construct portfolios with custom weights. (Tickers saved in a json file)
 * **Risk Analysis:** Value at Risk (VaR), Conditional VaR (CVaR), Volatility analysis and other ratios
 * **Diversification:** Correlation matrix heatmap and diversification benefit calculation.
 * **Intraday Monitor:** Live tracking of portfolio performance over the last 24 hours.
