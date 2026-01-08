@@ -42,7 +42,8 @@ The project includes automated daily reporting via Linux cron jobs and is design
 ├── reports/                  # Generated daily text reports
 ├── scripts/
 │   ├── daily_reports.sh      # Bash script for Cron jobs
-│   └── generate_report.py    # Python script for report generation
+|   ├── generate_report.py    # Python script for report generation
+│   └── keep_alive.sh         # Service script: Keeps Streamlit running 24/7
 ├── strategies/
 │   ├── __init__.py
 │   ├── base_strategy.py      # Abstract base class
