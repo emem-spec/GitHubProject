@@ -110,9 +110,12 @@ def run_quant_b():
         st.markdown(f"<span class='live-badge'>Last Update: {now}</span>", unsafe_allow_html=True)
 
     with st.spinner("Fetching live data..."):
-        live_data = get_data(available_tickers, period="1d", interval="5m")
+        raw_live_data = get_data(available_tickers, period="5d", interval="5m")
     
-    if live_data is not None and not live_data.empty:
+    if raw_live_data is not None and not raw_live_data.empty:
+        live_data = raw_live_data.tail(78)
+
+        # Normalize starting from the FIRST point of this new window
         normalized_live = (live_data / live_data.iloc[0]) * 100
         live_portfolio_series = normalized_live.dot(weights)
         
